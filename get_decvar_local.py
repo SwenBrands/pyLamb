@@ -14,12 +14,14 @@ import os
 from statsmodels.tsa.arima_process import ArmaProcess
 import statsmodels.api as sm
 exec(open('analysis_functions.py').read())
+exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameter
-ensemble = 'ec_earth3_veg' #cera20c or mpi_esm_1_2_hr
+ensemble = 'miroc6' #cera20c or mpi_esm_1_2_hr
+experiment = 'amip' #historical, amip or 20c
 city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
-taryears = [1901,2010] #start and end year
+taryears = [1979,2014] #start and end year, [1901,2010] for 20c and historical, [1979,2014] for amip
 tarhours = [0,6,12,18]
 tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte
 nfft_quotients = [1] # n / nff_quotient equals the length of the maximum period; nfft_quotient = number of non-overlapping sub-periods used by the Welch method
@@ -34,14 +36,14 @@ periodogram_type = 'periodogram' #Welch or periodogram
 fs = 1 #sampling frequency for 3-hourly data, 30*8 is monthly, 90*8 is seasonal, alternatively 1 for yearly data
 window = 'hann' #hann, nuttall etc. http://qingkaikong.blogspot.com/2017/01/signal-processing-finding-periodic.html
 scaling = 'spectrum'
-repetitions = 1000 #10000 is ideal
+repetitions = 10000 #10000 is ideal
 detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 ci_percentiles = [2.5,5.,10.,90.,95.,97.5] #these crtical values for power spectra will be calculated
 ci_tar_percentile = 95. #and this one will be plotted
 cutoff = [] #defines where the x-axis is cut-off in the time-series plots, [] for no cutoff
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
 standardization = 'yes' #Are the count or % LWT time series z-transformed prior to calculating the power spectra, yes or no ?
-reshuffling = 'white' #white or ar1
+reshuffling = 'ar1' #white or ar1
 acorr_lag = 1 #lag of autocorrelation function to be used to generate autoregressive process used to obtain critical values for <reshuffling = 'ar1'>; not used for <reshuffling = 'white'>
 
 #visualization options
@@ -59,23 +61,24 @@ if aggreg != 'year': #check for correct usage of the script
 if (reshuffling == 'ar1') & (standardization != 'yes'):
     raise Exception("Bad call of the script: ar1 reshuffling currently only works for standardized (or z-transformed) LWT time series!") 
 
-if ensemble == 'cera20c':
+if ensemble == 'cera20c' and experiment == '20c':
     model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
     mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
-    experiment = '20c'
     model_label = 'CERA-20C'
-elif ensemble == 'mpi_esm_1_2_hr':
+elif ensemble == 'mpi_esm_1_2_hr' and experiment == 'historical':
     model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
     mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
-    experiment = 'historical'
     model_label = 'MPI-ESM1.2-HR'
-elif ensemble == 'ec_earth3_veg':
+elif ensemble == 'ec_earth3_veg' and experiment == 'historical':
     model = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg']
     mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r10i1p1f1','r11i1p1f1']
-    experiment = 'historical'
     model_label = 'EC-Earth3-Veg'
+elif ensemble == 'miroc6' and experiment == 'amip':
+    model = ['miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6']
+    mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+    model_label = 'MIROC6'
 else:
-    raise Exception('ERROR: unknown entry for <ensemble> input parameter !') 
+    raise Exception('ERROR: unknown entry for <ensemble> and/or <experiment> input parameters !') 
 
 print('INFO: get low frequency variability for '+aggreg+' LWT counts, '+ensemble+' with '+str(len(mrun))+' runs, '+str(tarmonths)+' months, '+str(taryears)+' years, '+str(tarhours)+' hours, ' +window+' window, '+detrend+' detrending and '+str(repetitions)+' repetitions for the resampling approach. Output units are: '+yearly_units+'.')
 
@@ -104,22 +107,22 @@ for qq in np.arange(len(nfft_quotients)):
             raise Exception('ERROR: unknown entry for <tarlat>!')
 
         for mm in list(range(len(model))):
+            #get metadata for this GCM
+            runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
+            #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
+            file_taryears = get_target_period(model[mm],experiment,cmip)
+            file_startyear = file_taryears[0]
+            file_endyear = file_taryears[1]
+            
+            #get timestep
             if model[mm] == 'cera20c':
                 timestep = '3h'
-                file_startyear = '1901'
-                file_endyear = '2010'
             elif model[mm] == 'era5':
                  timestep = '6h'
-                 file_startyear = '1979'
-                 file_endyear = '2020'
             elif model[mm] in ('mpi_esm_1_2_hr','ec_earth3_veg'):
                  timestep = '6h'
-                 file_startyear = '1850'
-                 file_endyear = '2014'
             else:
                 timestep = '6h'
-                file_startyear = '1979'
-                file_endyear = '2005'
                 
             store_wt = store_wt_orig+'/'+timestep+'/'+experiment+'/'+hemis
             wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
@@ -245,7 +248,7 @@ for qq in np.arange(len(nfft_quotients)):
         runmeans_i = wt_agg.rolling(time=meanperiod,center=True,min_periods=None).mean() # i stands for individual model run
             
         #create target directories for periodogram if missing
-        periodogram_dir = figs+'/'+model[mm]+'/local/'+city[cc]+'/'+aggreg+'/periodogram/'
+        periodogram_dir = figs+'/'+model[mm]+'/'+experiment+'/local/'+city[cc]+'/'+aggreg+'/periodogram/'
         if os.path.isdir(periodogram_dir) != True:
             os.makedirs(periodogram_dir)
         
@@ -316,7 +319,7 @@ for qq in np.arange(len(nfft_quotients)):
         plt.ylabel(ylabel_p)
         titlelabel = periodogram_type+' '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' '+window+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom
         plt.title(titlelabel,size=titlesize)
-        savename = periodogram_dir+'/'+periodogram_type+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+window+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
+        savename = periodogram_dir+'/'+periodogram_type+'_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+window+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
         plt.savefig(savename,dpi=dpival)
         plt.close('all')
         
@@ -324,7 +327,7 @@ for qq in np.arange(len(nfft_quotients)):
         print(period_yr[maxamp_ind[-10:]])
 
         #Plot year-to-year WT counts for each ensemble member of CERA-20C and the <meanperiod>-year rolling temporal average of the yearly ensemble mean counts
-        timeseries_dir = figs+'/'+model[0]+'/local/'+city[cc]+'/'+aggreg+'/timeseries'
+        timeseries_dir = figs+'/'+model[mm]+'/'+experiment+'/'+model[0]+'/local/'+city[cc]+'/'+aggreg+'/timeseries'
         #create target directory if missing
         if os.path.isdir(timeseries_dir) != True:
             os.makedirs(timeseries_dir)
@@ -343,7 +346,7 @@ for qq in np.arange(len(nfft_quotients)):
         text_x = np.percentile(years,84) # x coordinate of text inlet
         text_y = wt_agg.values.max() - (wt_agg.values.max() - wt_agg.values.min())/25 # y coordinate of text inlet
         plt.text(text_x,text_y, '$\sigma$ / $\mu$ = '+str(np.round(np.nanstd(runmeans)/np.nanmean(runmeans),3)),size=8) #plot standard deviation of running ensemble mean time series as indicator of forced response
-        savename = timeseries_dir+'/timeseries_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
+        savename = timeseries_dir+'/timeseries_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
         plt.savefig(savename,dpi=dpival)
         plt.close('all')
         wt_center.close()

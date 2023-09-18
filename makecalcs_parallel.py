@@ -26,20 +26,24 @@ from joblib import Parallel, delayed
 import time
 import gc
 exec(open('lambtyping_parallel.py').read())
+exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
+exec(open('analysis_functions.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 ########################################################################
+#Note: The time period is filtered in the previous interpolation step accomplished by <interpolator_xesmf.py>
 
 n_par_jobs = 8 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-startdate = "01/01/1979 00:00:00" # currently not in use, time period is filtered in interpolator.py
-enddate = "31/12/2005 18:00:00" #currently not in use
-experiment='historical' #historical, 20c, amip, ssp245, ssp585
+experiment='amip' #historical, 20c, amip, ssp245, ssp585
 home = os.getenv('HOME')
 filesystem = 'lustre'
 hemis = 'sh' #sh or nh
 saveindices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
 
-model = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','noresm2_mm','awi_esm_1_1_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','hadgem2_cc','hadgem2_es','hadgem3_gc31_mm','noresm2_lm','noresm2_lm','nesm3','nesm3','mri_esm2_0','noresm2_mm','miroc_es2l','miroc_es2l','ec_earth3_veg','ec_earth3_veg_lr','miroc6','ec_earth3_aerchem','ec_earth3_cc','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','noresm2_lm','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','hadgem2_es','mpi_esm_1_2_lr','access_esm1_5','noresm2_mm','ipsl_cm5a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','mpi_esm_1_2_hr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mri_esm2_0','mri_esm2_0','mri_esm2_0','fgoals_g2','fgoals_g3','kiost_esm','iitm_esm','taiesm1','csiro_mk3_6_0','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','gfdl_cm3','giss_e2_r','era5','kace_1_0_g','cmcc_cm2_hr4','inm_cm5','canesm5','gfdl_esm2g','miroc6','ec_earth3_veg','gfdl_esm4','bcc_csm1_1','cnrm_cm6_1','cnrm_cm6_1','cmcc_esm2','ipsl_cm5a_lr','interim','jra55','cnrm_cm6_1_hr','cnrm_cm6_1','ec_earth3_aerchem','ec_earth3_cc','cnrm_esm2_1','giss_e2_1_g', 'sam0_unicon', 'bcc_csm2_mr', 'gfdl_cm4','ec_earth3','access13', 'mpi_esm_mr', 'cmcc_cm','access10', 'ccsm4', 'ec_earth', 'canesm2', 'mpi_esm_lr', 'cnrm_cm5', 'giss_e2_h', 'inm_cm4', 'miroc_esm', 'mri_esm1', 'noresm1_m', 'ipsl_cm5a_mr', 'miroc5', 'hadgem2_es','mri_esm2_0','mpi_esm_1_2_ham','mpi_esm_1_2_lr','mpi_esm_1_2_lr','cnrm_esm2_1','access_cm2','access_esm1_5','cmcc_cm2_sr5','ipsl_cm6a_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','nesm3','nesm3','nesm3']
-mrun =  ['r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1','r2i1p1f1','r1i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r1i1p1','r1i1p1','r1i1p1f3','r1i1p1f1','r2i1p1f1','r1i1p1f1','r5i1p1f1','r4i1p1f1','r1i1p1f1','r1i1p1f2','r5i1p1f2','r1i1p1f1','r1i1p1f1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1','r3i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r22i1p1f1','r15i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1','r32i1p1f1','r2i1p1','r8i1p1f1','r3i1p1f1','r3i1p1f1','r4i1p1','r10i1p1f1','r11i1p1f1','r12i1p1f1','r13i1p1f1','r10i1p1f1','r2i1p1','r3i1p1','r5i1p1','r6i1p1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r2i1p1f1','r3i1p1f1','r5i1p1f1','r1i1p1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1','r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r1i1p1','r6i1p1','r1i1p1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r1i1p2f1','r1i1p1','r1i1p1f1','r6i1p1f1','r1i1p1f1','r1i1p1','r2i1p1f2','r3i1p1f2','r1i1p1f1','r1i1p1','r1i1p1','r1i1p1','r1i1p1f2','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r24i1p1f1','r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1', 'r6i1p1', 'r12i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r6i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r25i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1']
+model = ['miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6']
+mrun =  ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+
+#model = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','noresm2_mm','awi_esm_1_1_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','hadgem2_cc','hadgem2_es','hadgem3_gc31_mm','noresm2_lm','noresm2_lm','nesm3','nesm3','mri_esm2_0','noresm2_mm','miroc_es2l','miroc_es2l','ec_earth3_veg','ec_earth3_veg_lr','miroc6','ec_earth3_aerchem','ec_earth3_cc','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','noresm2_lm','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','hadgem2_es','mpi_esm_1_2_lr','access_esm1_5','noresm2_mm','ipsl_cm5a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','mpi_esm_1_2_hr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mri_esm2_0','mri_esm2_0','mri_esm2_0','fgoals_g2','fgoals_g3','kiost_esm','iitm_esm','taiesm1','csiro_mk3_6_0','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','gfdl_cm3','giss_e2_r','era5','kace_1_0_g','cmcc_cm2_hr4','inm_cm5','canesm5','gfdl_esm2g','miroc6','ec_earth3_veg','gfdl_esm4','bcc_csm1_1','cnrm_cm6_1','cnrm_cm6_1','cmcc_esm2','ipsl_cm5a_lr','interim','jra55','cnrm_cm6_1_hr','cnrm_cm6_1','ec_earth3_aerchem','ec_earth3_cc','cnrm_esm2_1','giss_e2_1_g', 'sam0_unicon', 'bcc_csm2_mr', 'gfdl_cm4','ec_earth3','access13', 'mpi_esm_mr', 'cmcc_cm','access10', 'ccsm4', 'ec_earth', 'canesm2', 'mpi_esm_lr', 'cnrm_cm5', 'giss_e2_h', 'inm_cm4', 'miroc_esm', 'mri_esm1', 'noresm1_m', 'ipsl_cm5a_mr', 'miroc5', 'hadgem2_es','mri_esm2_0','mpi_esm_1_2_ham','mpi_esm_1_2_lr','mpi_esm_1_2_lr','cnrm_esm2_1','access_cm2','access_esm1_5','cmcc_cm2_sr5','ipsl_cm6a_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','nesm3','nesm3','nesm3']
+#mrun =  ['r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1','r2i1p1f1','r1i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r1i1p1','r1i1p1','r1i1p1f3','r1i1p1f1','r2i1p1f1','r1i1p1f1','r5i1p1f1','r4i1p1f1','r1i1p1f1','r1i1p1f2','r5i1p1f2','r1i1p1f1','r1i1p1f1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1','r3i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r22i1p1f1','r15i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1','r32i1p1f1','r2i1p1','r8i1p1f1','r3i1p1f1','r3i1p1f1','r4i1p1','r10i1p1f1','r11i1p1f1','r12i1p1f1','r13i1p1f1','r10i1p1f1','r2i1p1','r3i1p1','r5i1p1','r6i1p1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r2i1p1f1','r3i1p1f1','r5i1p1f1','r1i1p1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1','r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r1i1p1','r6i1p1','r1i1p1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r1i1p2f1','r1i1p1','r1i1p1f1','r6i1p1f1','r1i1p1f1','r1i1p1','r2i1p1f2','r3i1p1f2','r1i1p1f1','r1i1p1','r1i1p1','r1i1p1','r1i1p1f2','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r24i1p1f1','r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1', 'r6i1p1', 'r12i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r6i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r25i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1']
 
 ##missing years in historical experiment for this run, e.g. 1877, 1880, 1888, 1892, 1905, 1910
 #model = ['ec_earth3_veg']
@@ -74,39 +78,35 @@ if hemis == 'sh':
 tarres=2.5
 halfres=tarres/2
 
-#load data
-for k in list(range(len(model))):
-    #set target years, only used to create the names of the netCDF files to be read or stored; is not used to filter the data according to these years
+#loop through the distinct gcms and reanalyses
+for mm in list(range(len(model))):
     starttime2 = time.time()
-    if experiment in ('historical','amip'):
-        if model[k] == 'era5':
-            taryears = ['1979', '2022']
-        elif model[k] in ('ec_earth3_veg','mpi_esm_1_2_hr'):
-            taryears = ['1850', '2014']
-        else:
-            taryears = ['1979', '2005']
-        print('INFO: The start and end years of the output file for '+model[k]+' will be '+str(taryears))
-    elif experiment in('ssp126','ssp245','ssp370','ssp585'):
-        taryears=['2015', '2100']
-    elif experiment in('20c'):
-        taryears=['1901', '2010']
-    else:
-        raise Exception('Error: check entry for <experiment>!')
+    #get metadata for this GCM
+    runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
+
+    #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
+    taryears = get_target_period(model[mm],experiment,cmip)
+    
+    #Print the main script configuration to inform the user during execution from one GCM / reanalysis to another
+    print('INFO: Interpolating '+model[mm]+' for '+experiment+' and time period '+str(taryears[0])+' to '+str(taryears[1])+'...')
     
     #define temporal resolution of the reanalysis or gcm and add to target path the nc catalogue files will be saved in
-    if model[k] == 'cera20c':
+    if model[mm] == 'cera20c':
         timestep = '3h'
     else:
         timestep = '6h'
-    tarpath_step = tarpath+'/'+timestep
+    
+    #create target directory if necessary
+    tarpath_step = tarpath + '/' + timestep + '/' + experiment + '/' + hemis
+    if os.path.isdir(tarpath_step) != True:
+        os.makedirs(tarpath_step)
 
     #load archive
     if hemis == 'nh':
-        #archivo = srcpath + model[k] + '/6h/' + experiment + '/' + mrun[k] + '/psl_interp' + '/psl_interp_6hrPlev_' + model[k] + '_' + experiment + '_' + mrun[k] + '.nc'
-        archivo = srcpath + '/' + model[k] + '/'+timestep+'/' + experiment + '/' + mrun[k] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[k] + '_' + experiment + '_' + mrun[k] + '_'+hemis+'.nc'
+        archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_'+hemis+'.nc'
         lat_bounds = [30, 70]
     elif hemis == 'sh':
-        archivo = srcpath + '/' + model[k] + '/'+timestep+'/' + experiment + '/' + mrun[k] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[k] + '_' + experiment + '_' + mrun[k] + '_'+hemis+'.nc'
+        archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_'+hemis+'.nc'
         lat_bounds = [-70, -30]
     else:
         raise Exception('ERROR: check entry for <hemis>')
@@ -187,7 +187,7 @@ for k in list(range(len(model))):
     
     #save file for each model and output variable
     wtseries = wtseries.astype(np.int16) #convert to integer values
-    newfile = tarpath_step +'/'+ experiment + '/'+hemis+'/wtseries_' + model[k] + '_' + experiment +'_'+ mrun[k] +'_' + hemis +'_'+ taryears[0] +'_'+ taryears[1]+'.nc'
+    newfile = tarpath_step + '/wtseries_' + model[mm] + '_' + experiment +'_'+ mrun[mm] +'_' + hemis +'_'+ str(taryears[0]) +'_'+ str(taryears[1])+'.nc'
     outnc = xr.DataArray(wtseries, coords=[dates, center_lons, center_lats], dims=['time', 'lon', 'lat'], name='wtseries')
     outnc.attrs['long_name'] = 'Lamb Weather Types'
     outnc.attrs['standard_name'] = 'Lamb Weather Types'
@@ -239,7 +239,8 @@ for k in list(range(len(model))):
         circnames =  ['wflow','sflow','wvort','svort','vort','flow']
         fullnames =  ['westerly flow','southerly flow','westerly shear vorticity','southerly shear vorticity','total shear vorticity','resultant flow'] #following Jones et al. 1993
         for ci in list(range(len(circinds))):
-            newfile = tarpath_step +'/'+ experiment + '/'+hemis+'/'+circinds[ci]+'_'+ model[k] + '_' + experiment +'_'+ mrun[k] +'_' + hemis +'_'+ taryears[0] +'_'+ taryears[1]+'.nc'
+            #newfile = tarpath_step +'/'+ experiment + '/'+hemis+'/'+circinds[ci]+'_'+ model[mm] + '_' + experiment +'_'+ mrun[mm] +'_' + hemis +'_'+ taryears[0] +'_'+ taryears[1]+'.nc'
+            newfile = tarpath_step +'/'+circinds[ci]+'_'+ model[mm] + '_' + experiment +'_'+ mrun[mm] +'_' + hemis +'_'+ taryears[0] +'_'+ taryears[1]+'.nc'
             outnc = xr.DataArray(eval(circinds[ci]), coords=[dates, center_lons, center_lats], dims=['time', 'lon', 'lat'], name=circnames[ci])
             outnc.attrs['long_name'] = str(fullnames[ci])
             outnc.attrs['standard_name'] = str(circinds[ci])
@@ -287,7 +288,7 @@ for k in list(range(len(model))):
         raise Exception('ERROR: check entry for <saveindices>!')
     endtime2 = time.time()
     elaptime2 = endtime2 - starttime2
-    print('The elapsed time for processing '+model[k]+' is '+str(elaptime2)+'seconds, proceeding to the next model now..')
+    print('The elapsed time for processing '+model[mm]+' is '+str(elaptime2)+'seconds, proceeding to the next model now..')
 
 endtime = time.time()
 elaptime = endtime - starttime

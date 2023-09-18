@@ -51,6 +51,28 @@ def get_location(location_f):
         raise Exception('ERROR: check entry for <location_f>!')
     return(tarlat_f,tarlon_f)
 
+def get_target_period(model_f,experiment_f,cmip_f):
+    '''returns a target period as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
+    #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
+    if experiment_f == 'amip' and cmip_f == 5:
+        taryears_f=[1979,2005]
+    elif experiment_f == 'amip' and cmip_f == 6:
+        taryears_f=[1979,2014]
+    elif experiment_f == 'historical' and model_f in ('ec_earth3_veg','mpi_esm_1_2_hr'):
+        taryears_f=[1850,2014]
+    elif experiment_f == 'historical' and model_f not in ('ec_earth3_veg','mpi_esm_1_2_hr') and str(cmip_f) in ('5','6'):
+        taryears_f=[1979,2005]
+    elif experiment_f == 'historical' and model_f in ('interim','jra55') and cmip_f == 1: #1 is here a fake number and means that reanalysis data is processsed instead of gcm data from cmip5 or 6
+        taryears_f=[1979,2005]
+    elif experiment_f == 'historical' and model_f == 'era5' and cmip_f == 1:
+        taryears_f=[1979,2022]
+    elif experiment_f in ('ssp126','ssp245','ssp370','ssp585'):
+         taryears_f=[2015,2100]
+    elif experiment_f == '20c':
+        taryears_f=[1901,2010]
+    else:
+        raise Exception('Error: check entry for <experiment> !')
+    return(taryears_f)
 
 def z_transform(np_arr_f):
     '''performs standarization / z-transformation along the first dimension of an input numpy array (np_arr_f)'''
