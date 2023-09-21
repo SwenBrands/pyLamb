@@ -1,26 +1,24 @@
 # -*- coding: utf-8 -*-
 
-''''This script calcluates long-term trends and power spectra for a range of periods upon reanalysis or GCM data. It reads in various members of a given ensemble,
+''''This script calcluates long-term trends and power spectra for a range of periods upon reanalysis or GCM data. It reads-in various members of a given ensemble,
 calculates the member-wise statistics, checks their significance and finally the ensemble's agreement on significance (and for the trends also aggeement on the slope's sign).
 The <nfft> parameter used in scipy.signal.periodogram() and welch() refers to the maximal length of the temporal shifts (i.e. to the largest measured period / lowest frequency),
-which is the lenght of the time series at the utmost. If set to None, <nfft> is the length of the time series in periodogram() and the length of <nperseg> (see below) in welch().
+which is the lenght of the time series at the utmost, in which case it equals the fundamental frequency. If set to None, <nfft> is the length of the time series in periodogram() and the length of <nperseg> (see below) in welch().
 The <nperseg> input parameter is used in welch() only and defines the length of the overlapping sub-periods taken into account by welch(), where the power spectra are first
-calculated seperately for each sub-period and then averaged to get mor robust results. Launch to queue on SMD cluster with e.g.:
+calculated seperately for each sub-period and then averaged to get more robust results. Launch to queue on SMD cluster with e.g.:
 qsub -N map_lowfreqvar -l walltime=06:00:00 -l mem=48gb -q himem -e error.log -o out.log -l nodes=1:ppn=8 launchme.sh &
 
 1. Remaining issues:
-1.1 Check which are the units for the mapped power spectra ? Is it really <variable unit>² ?
-1.2 Save the results (slopes, power spectra etc.) to netCDF format
-1.3 The script is ready to apply to alternative reanalyses and GCM; this will be done in the near future
+1.1 Save the results (slopes, power spectra etc.) to netCDF format
 
-2. Remaining tasks:
-2.1 Repeat for GCM ensembles and compare GCM and reanalyses spectra. Do this on the basis of the stored netCDF files from point 1.2 above
-2.2 As an alternative to 2.1, compute cross-power spectra (CPS) GCM vs. reanalysis
+2. Remaining tasks, suggestions:
+2.1 Implement AR(1) and AR(2) random reshuffling
+2.2 Compute cross-power spectra (CPS) GCM vs. reanalysis
 2.3 To look for forcing agents of low frequency variability, also calcluate CPS for reanalysis and SST indices (among others like e.g. QBO index) 
 2.4 Use autocorrelation function in addition to power spectra in order to check the robustness of the results
 2.5 Lower the temporal resolution of the analayses from yearly to monthly or weekly accumulations (work in progress)
-2.6 Inform spatial average spectral analyses with the maps produced by this script, e.g. define a domain for central Europe in get_decvar_regional.py (this script already fully working for yearly, monthly or weekly LWT counts)
-2.7 Use Wavelets ?
+2.6 Use other spectral methods, e.g. wavelets.
+2.7. Map lag1 and lag2 autocorrelation coefficients of the yearly LWT frequencies (CERA-20C tends to produce a red spectrum while GCMs tend to produce a blue spectrum).
 '''
 
 #load packages
@@ -39,42 +37,42 @@ from joblib import Parallel, delayed
 import time
 import gc
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+exec(open('analysis_functions.py').read())
+exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameters
-n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
+n_par_jobs = 24 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
+ensemble = 'mpi_esm_1_2_lr'
+experiment = 'piControl'
 region_various = ['nh'] #['nh','sh']
-tarwts_various = [[1]] #[[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+tarwts_various = [[1],[18]] #[[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #[[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
-taryears = [1901,2010] #start and end yeartaryears = [1979,2005] #start and end year
+taryears = [1860,2261] #start and end years to be analysed; [1979,2005] for historical experiments from CMIP5 and 6, historical and amip in CMIP6 extends to 2014 (at least), piControl period varies largely from one GCM to another
 aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
 fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
-wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
 
-model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
-mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
-
-#model = ['cera20c','cera20c']
-#mrun = ['m0','m1']
-
-#model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
-#mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
-
-#model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
-#mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1']
-
-# model = ['era5']
-# mrun = ['r1i1p1']
-# experiment = 'historical' #historical, 20c, amip, ssp245, ssp585
-
-experiment = '20c' #20c or historical
 meanperiod = 10 #used to calculate the rolling mean WT counts for the temporally aggregated data as defined in <aggreg> above, .e.g. 10
 anom = 'yes' #remove monthly mean values to obtain anomalies
 rollw = 21 #rolling window in days used to calculate the climatological mean which is then removed from each entry of the daily time series; must be an uneven number
+
+#options for trend analysis
 testlevel = 0.05 #test-level assumed to decide whether the Mann Kendall tendency is signiificant
 mktest = 'original' # original, yue_wang, pre_white, hamed_rao, regional, seasonal, theilslopes (scipy is used in the latter case) Type of Mann Kendall test or modifications thereof described in https://doi.org/10.21105/joss.01556
 use_sig = 'mk' #mk or user, chose which significance estimate to use; mk uses the output of the Mann Kendall function stated above, user derives it manually from filtering the p-values with the <testlevel> parameter defined above
-relax = 1 #number of members that are allowed to be in disagreement on the sign or significance of the slope if compared to the other members of the ensemble defined in <model> and <mrun>
+relax = 0 #, used for both trend calculations and spectral analysis; this is the number of members allowed to be in disagreement on the sign or significance of the slope if compared to the other members of the ensemble defined in <model> and <mrun>
+
+#options used for periodogram
+fs = 1 #sampling frequency used for calcluating power and cross-power spectra; is applied on temporally aggregated values as defined by <aggreg> above
+nfft_quotient = None #must be equal or lower than nperseg_quotient; used to calculate <nfft>, i.e. the length of the maximum temporal shift (equal to the largest period) taken into account in the periodogram. nfft = np.floor(n / nfft_quotient), where n is the sample size of the time series; 4 is recommended by Schönwiese 2006; must be at least 1 or None; if set to None, the default nfft option is used in signal.periodgram() and signal.welch(), implies zero padding when used in Welch (check what this means!). 
+nperseg_quotient = 3 #only used by Welch; used to calculate <nperseg>, i.e. the length of the overlapping sub-periods taken into account in Welch, where the power spectra are first calculated seperately for each subperiod and then averaged to get mor robust results in a cross-validation-like manner; nperseg = np.floor(n / nperseg_quotient), where n is the sample size of the time series (for e.g. 50 year superiods of n = 100 years, this quotient is set to 2)
+scaling = 'spectrum'
+detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
+window = 'hann' #hamming or hann, etc.
+repetitions = 1000 #number of repetitions used for randomly reshuffling the time series in order to obtain confidence intervals for random power spectra
+ci_percentile = 90.
+periodogram_type = 'Welch' #periodogram or Welch, as implemented in scipy.signal
+yearly_units = '%' # count or % (relative frequency); unit of the yearly LWT counts
 
 #visualization options
 dpival = 300 #resolution of the output figure in dots per inch
@@ -83,30 +81,20 @@ titlesize = 7. #Font size of the titles in the figures
 colormap_tr = 'seismic'
 colormap_ps = 'hot_r'
 
-#options used for periodgram, not included here so far
-fs = 1 #sampling frequency used for calcluating power and cross-power spectra; is applied on temporally aggregated values as defined by <aggreg> above
-nfft_quotient = None #must be equal or lower than nperseg_quotient; used to calculate <nfft>, i.e. the length of the maximum temporal shift (equal to the largest period) taken into account in the periodogram. nfft = np.floor(n / nfft_quotient), where n is the sample size of the time series; 4 is recommended by Schönwiese 2006; must be at least 1 or None; if set to None, the default nfft option is used in signal.periodgram() and signal.welch(), implies zero padding when used in Welch (check what this means!). 
-nperseg_quotient = 2 #only used by Welch; used to calculate <nperseg>, i.e. the length of the overlapping sub-periods taken into account in Welch, where the power spectra are first calculated seperately for each subperiod and then averaged to get mor robust results in a cross-validation-like manner; nperseg = np.floor(n / nperseg_quotient), where n is the sample size of the time series (for e.g. 50 year superiods of n = 100 years, this quotient is set to 2)
-scaling = 'spectrum'
-detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
-window = 'hann' #hamming or hann, etc.
-repetitions = 1000 #number of repetitions used for randomly reshuffling the time series in order to obtain confidence intervals for random power spectra
-ci_percentile = 90.
-periodogram_type = 'periodogram' #periodogram or Welch, as implemented in scipy.signal
-yearly_units = '%' # count or % (relative frequency); unit of the yearly LWT counts
+#get ensemble configuration as defined in analysis_functions,py, see get_ensemble_config() function therein
+model,mrun,model_label,tarhours = get_ensemble_config(ensemble,experiment)
 
-#execute ###############################################################################################
+print('INFO: get low frequency variability for '+aggreg+' LWT counts, '+ensemble+' with '+str(len(mrun))+' runs, '+str(tarmonths_various)+' months, '+str(taryears)+' years, '+str(tarhours)+' hours, ' +window+' window, '+detrend+' detrending and '+str(repetitions)+' repetitions for the resampling approach. Output units are: '+yearly_units+'.')
+
+#EXECUTE ###############################################################################################
 #check consistency of input setting
 if len(model)-relax <= 0:
     raise Exception('ERROR: relax = '+str(relax)+' is too large for ensemble size = '+str(len(model)))
 
 starttime = time.time()
 print('INFO: This script will use '+str(n_par_jobs)+' parallel jobs to calculate the long term tendencies and power spectra along all longitudinal grid-boxes at a given latitude.')
-exec(open('analysis_functions.py').read())
-
-wt_names = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN', 'PDNE', 'PDE', 'PDSE', 'PDS', 'PDSW', 'PDW', 'PDNW', 'PDN', 'PC', 'DCNE', 'DCE', 'DCSE', 'DCS', 'DCSW', 'DCW', 'DCNW', 'DCN', 'U']
+wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
 ref_tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #used to decide whether to calc. the power spectra or not. To this end, continuous time series are needed.
-
 #set <anom> to "no" in any case for yearly aggregations
 if aggreg == 'year':
     print('INFO: Calculation of monthly anomaly values does not apply for yearly temporal aggregations; <anom> is thus forced to be "no" in this excursion of the script.')
@@ -128,35 +116,25 @@ for region in region_various:
             if seaslabel == '123456789101112':
                 seaslabel = 'yearly'
 
-            for mm in list(range(len(model))): 
+            for mm in list(range(len(model))):
                 print('INFO: loading '+model[mm]+', '+mrun[mm]+'...')
-                figs = fig_root+'/'+model[mm] #complete the path to the output figures
-                if model[mm] == 'cera20c':
-                    timestep = '3h'
-                    file_startyear = '1901'
-                    file_endyear = '2010'
-                elif model[mm] == 'era5':
-                    timestep = '6h'
-                    file_startyear = '1979'
-                    file_endyear = '2020'
-                elif model[mm] in ('mpi_esm_1_2_hr','ec_earth3_veg'):
-                    timestep = '6h'
-                    file_startyear = '1850'
-                    file_endyear = '2014'
-                else:
-                    timestep = '6h'
-                    file_startyear = '1979'
-                    file_endyear = '2005'
-                    
+                figs = fig_root+'/'+model[mm]+'/'+experiment #complete the path to the output figures
+                #get metadata for this GCM
+                runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
+                #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
+                file_taryears, timestep = get_target_period(model[mm],experiment,cmip)
+                file_startyear = file_taryears[0]
+                file_endyear = file_taryears[1]
+                
                 store_wt = store_wt_orig+'/'+timestep+'/'+experiment
-                wt_file_reg = store_wt+'/'+hemis+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+file_startyear+'_'+file_endyear+'.nc' #path to the LWT catalogues
+                wt_file_reg = store_wt+'/'+hemis+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
                 nc = xr.open_dataset(wt_file_reg)
                 lats = nc.lat.values
                 lons = nc.lon.values
                 
                 #select target years and months
                 dates = pd.DatetimeIndex(nc.time.values)
-                year_ind = np.where((dates.year >= taryears[0]) & (dates.year <= taryears[1]) & dates.month.isin(tarmonths))[0]
+                year_ind = np.where((dates.year >= taryears[0]) & (dates.year <= taryears[1]) & (dates.month.isin(tarmonths)) & (np.isin(dates.hour,tarhours)))[0]
                 nc = nc.isel(time=year_ind)
                 dates = dates[year_ind]
                 
@@ -300,7 +278,6 @@ for region in region_various:
             xx = np.transpose(xx)
             yy = np.transpose(yy)
             runlabel = str(len(mrun)) #number of runs
-            modellabel = model[mm] #last model
             halfres = np.abs(np.diff(lats))[0]/2
             
             #plot trend agreement map
@@ -317,14 +294,14 @@ for region in region_various:
                 raise Exception('ERROR: check entry for <region>!')
             
             pattern_tr = np.mean(slope,axis=0)
-            title_tr = mktest+' '+wtlabel+' '+modellabel.upper()+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
+            title_tr = mktest+' '+wtlabel+' '+model_label+' '+experiment+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
             
             #make output directory if it does not exist
             wtlabel2save = wtlabel.replace(' ','_')
             path_trend = figs+'/regional/'+aggreg+'/maps/'+region+'/'+seaslabel+'/trend/'+wtlabel2save
             if os.path.isdir(path_trend) != True:
                 os.makedirs(path_trend)            
-            savename_tr = path_trend+'/'+mktest+'_'+modellabel+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
+            savename_tr = path_trend+'/'+mktest+'_'+model_label+'_'+experiment+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
             get_map_lowfreq_var(pattern_tr,xx,yy,agree_ind_tr,minval_tr,maxval_tr,dpival,title_tr,savename_tr,halfres,colormap_tr,titlesize,yearly_units)
             
             #plot power spectrum agreement maps for each period
@@ -349,11 +326,11 @@ for region in region_various:
                 cbar_label = 'Power spectrum amplitude ('+yearly_units+'$²$)'
                 #add nperseg in title and filename in case Welch periodogram is used
                 if periodogram_type == 'Welch':
-                    title_ps = periodogram_type+' '+str(np.round(period_unique[pp],1))+'y '+window+' nfft'+str(nfft)+' nseg'+str(nperseg)+' ci'+str(round(ci_percentile))+' '+wtlabel+' '+modellabel.upper()+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+' '+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
-                    savename_ps = path_periodogram+'/'+periodogram_type+'_'+str(np.round(period_unique[pp],1))+'y_'+window+'_nfft'+str(nfft)+'_nseg'+str(nperseg)+'_ci'+str(round(ci_percentile))+'_'+modellabel+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
+                    title_ps = periodogram_type+' '+str(np.round(period_unique[pp],1))+'y '+window+' nfft'+str(nfft)+' nseg'+str(nperseg)+' ci'+str(round(ci_percentile))+' '+wtlabel+' '+model_label.upper()+' '+experiment+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+' '+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
+                    savename_ps = path_periodogram+'/'+periodogram_type+'_'+str(np.round(period_unique[pp],1))+'y_'+window+'_nfft'+str(nfft)+'_nseg'+str(nperseg)+'_ci'+str(round(ci_percentile))+'_'+ensemble+'_'+experiment+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
                 elif periodogram_type == 'periodogram':
-                    title_ps = periodogram_type+' '+str(np.round(period_unique[pp],1))+'y '+window+' nfft'+str(nfft)+' ci'+str(round(ci_percentile))+' '+wtlabel+' '+modellabel.upper()+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+' '+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
-                    savename_ps = path_periodogram+'/'+periodogram_type+'_'+str(np.round(period_unique[pp],1))+'y_'+window+'_nfft'+str(nfft)+'_ci'+str(round(ci_percentile))+'_'+modellabel+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
+                    title_ps = periodogram_type+' '+str(np.round(period_unique[pp],1))+'y '+window+' nfft'+str(nfft)+' ci'+str(round(ci_percentile))+' '+wtlabel+' '+model_label.upper()+' '+experiment+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+' '+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
+                    savename_ps = path_periodogram+'/'+periodogram_type+'_'+str(np.round(period_unique[pp],1))+'y_'+window+'_nfft'+str(nfft)+'_ci'+str(round(ci_percentile))+'_'+ensemble+'_'+experiment+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
                 else:
                     raise Exception('ERROR: check entry for <periodogram_type>!')
                     

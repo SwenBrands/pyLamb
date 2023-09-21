@@ -36,10 +36,10 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 ##MEMORY EFFICIENT VERSION OF interpolator_north.py, loads GCM data file by file using xarray.open_dataset instead of xarray.open_mfdataset
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
-experiment = 'amip' #historical, 20c, amip, ssp245, ssp585
+experiment = 'amip' #historical, 20c, amip, piControl, ssp245, ssp585
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
-hemis = 'sh'
+hemis = 'nh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
@@ -49,13 +49,18 @@ home = os.getenv('HOME')
 #mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','360_day','360_day','noleap','noleap','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','noleap','gregorian','noleap','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','gregorian','360_day','noleap','noleap','noleap','noleap','gregorian','gregorian','noleap','noleap','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap', 'noleap', 'noleap', 'noleap','gregorian','proleptic_gregorian', 'gregorian', 'gregorian','proleptic_gregorian', 'noleap', 'gregorian', 'noleap', 'gregorian', 'gregorian', 'noleap', 'noleap', 'gregorian', 'gregorian', 'noleap', 'gregorian', '360_day', '360_day','gregorian','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','proleptic_gregorian', 'noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
 ## amip runs successfully interpolated for the NH and SH
-#model = ['miroc6']
+#model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+#mrun = ['r9i1p1f1','r10i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1']
+#mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+
+model = ['ec_earth3','ec_earth3']
+mrun = ['r9i1p1f1','r10i1p1f1']
+mycalendar = ['gregorian','gregorian']
+
+## piControl runs successfully interpolated for the NH and SH
+#model = ['mpi_esm_1_2_lr']
 #mrun = ['r1i1p1f1']
 #mycalendar = ['gregorian']
-
-model = ['miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-mrun = ['r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1']
-mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
 ##years are lacking in this simulation:
 #model = ['ec_earth3_veg']
@@ -93,23 +98,7 @@ for mm in list(range(len(model))):
     runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
     
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-    taryears = get_target_period(model[mm],experiment,cmip)
-    
-    # #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-    # if experiment == 'amip' and cmip == 5:
-        # taryears=[1979,2005]
-    # elif experiment == 'amip' and cmip == 6:
-        # taryears=[1979,2014]
-    # elif experiment == 'historical' and model[mm] in ('ec_earth3_veg','mpi_esm_1_2_hr'):
-        # taryears=[1850,2014]
-    # elif experiment == 'historical' and model[mm] not in ('ec_earth3_veg','mpi_esm_1_2_hr'):
-        # taryears=[1979,2005]
-    # elif experiment in ('ssp126','ssp245','ssp370','ssp585'):
-         # taryears=[2015,2100]
-    # elif experiment == '20c':
-        # taryears=[1901,2010]
-    # else:
-        # raise Exception('Error: check entry for <experiment>')
+    taryears, timestep = get_target_period(model[mm],experiment,cmip)
     
     #Print the main script configuration to inform the user during execution from one GCM to another
     print('INFO: Interpolating '+model[mm]+' for '+experiment+' and time period '+str(taryears[0])+' to '+str(taryears[1])+'...')

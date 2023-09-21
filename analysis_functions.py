@@ -51,28 +51,79 @@ def get_location(location_f):
         raise Exception('ERROR: check entry for <location_f>!')
     return(tarlat_f,tarlon_f)
 
+def get_ensemble_config(ensemble_f,experiment_f):
+    '''obtains ensemble configuration in terms of model labels (model_m) and run labels (mrun_m), both used for loading the netCDF data.
+    The functions also returns a generalized ensemble label used for plotting and the target hours considered in the analyses, which may differ may differ from what is stored in netCDF format.'''
+    if ensemble_f == 'cera20c' and experiment_f == '20c':
+        model_f = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
+        mrun_f = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
+        model_label_f = 'CERA-20C'
+        tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'mpi_esm_1_2_hr' and experiment_f == 'historical':
+        model_f = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
+        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        model_label_f = 'MPI-ESM1.2-HR'
+        tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'ec_earth3' and experiment_f == 'amip':
+        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1']
+        model_label_f = 'EC-Earth3'
+        tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
+        model_f = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg']
+        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r10i1p1f1','r11i1p1f1']
+        model_label_f = 'EC-Earth3-Veg'
+        tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'miroc6' and experiment_f == 'amip':
+        model_f = ['miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6']
+        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        model_label_f = 'MIROC6'
+        tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'mpi_esm_1_2_lr' and experiment_f == 'piControl':
+        model_f = ['mpi_esm_1_2_lr','mpi_esm_1_2_lr']
+        mrun_f = ['r1i1p1f1','r1i1p1f1']
+        model_label_f = 'MPI-ESM1.2-LR'
+        tarhours_f = [0,6,12,18]
+    else:
+        raise Exception('ERROR: unknown entry for <ensemble_f> and/or <experiment_f> input parameters !')
+    return(model_f,mrun_f,model_label_f,tarhours_f)
+
 def get_target_period(model_f,experiment_f,cmip_f):
-    '''returns a target period as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
+    '''returns the target period (taryears_f) and timestep (timestep_f) to be used in the analyses as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     if experiment_f == 'amip' and cmip_f == 5:
         taryears_f=[1979,2005]
-    elif experiment_f == 'amip' and cmip_f == 6:
+        timestep_f = '6h'
+    elif experiment_f == 'amip' and cmip_f == 6 and model_f not in ('ec_earth3'):
         taryears_f=[1979,2014]
+        timestep_f = '6h'
+    elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
+        taryears_f=[1979,2017]
+        timestep_f = '6h'
     elif experiment_f == 'historical' and model_f in ('ec_earth3_veg','mpi_esm_1_2_hr'):
         taryears_f=[1850,2014]
+        timestep_f = '6h'
     elif experiment_f == 'historical' and model_f not in ('ec_earth3_veg','mpi_esm_1_2_hr') and str(cmip_f) in ('5','6'):
         taryears_f=[1979,2005]
+        timestep_f = '6h'
     elif experiment_f == 'historical' and model_f in ('interim','jra55') and cmip_f == 1: #1 is here a fake number and means that reanalysis data is processsed instead of gcm data from cmip5 or 6
         taryears_f=[1979,2005]
+        timestep_f = '6h'
     elif experiment_f == 'historical' and model_f == 'era5' and cmip_f == 1:
         taryears_f=[1979,2022]
+        timestep_f = '6h'
     elif experiment_f in ('ssp126','ssp245','ssp370','ssp585'):
-         taryears_f=[2015,2100]
+        taryears_f=[2015,2100]
+        timestep_f = '6h'
+    elif experiment_f == 'piControl' and model_f == 'mpi_esm_1_2_lr':
+        taryears_f=[1850,2261] #the max and min years are limited in pandas, see https://calmcode.io/til/pandas-timerange.html
+        timestep_f = '6h'
     elif experiment_f == '20c':
         taryears_f=[1901,2010]
+        timestep_f = '3h'
     else:
-        raise Exception('Error: check entry for <experiment> !')
-    return(taryears_f)
+        raise Exception('Error: check entry for <experiment_f> !')
+    return(taryears_f,timestep_f)
 
 def z_transform(np_arr_f):
     '''performs standarization / z-transformation along the first dimension of an input numpy array (np_arr_f)'''
