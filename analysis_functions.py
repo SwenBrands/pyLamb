@@ -103,7 +103,10 @@ def get_target_period(model_f,experiment_f,cmip_f):
     elif experiment_f == 'historical' and model_f in ('ec_earth3_veg','mpi_esm_1_2_hr'):
         taryears_f=[1850,2014]
         timestep_f = '6h'
-    elif experiment_f == 'historical' and model_f not in ('ec_earth3_veg','mpi_esm_1_2_hr') and str(cmip_f) in ('5','6'):
+    elif experiment_f == 'historical' and model_f not in ('ec_earth3_veg','mpi_esm_1_2_hr') and cmip_f == 6:
+        taryears_f=[1979,2014]
+        timestep_f = '6h'
+    elif experiment_f == 'historical' and cmip_f == 5:
         taryears_f=[1979,2005]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f in ('interim','jra55') and cmip_f == 1: #1 is here a fake number and means that reanalysis data is processsed instead of gcm data from cmip5 or 6

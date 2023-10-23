@@ -1,7 +1,12 @@
-The pyLamb package is a set of Python scripts and functions run
-sequentially that allows the calculation of the Lamb Weather Type (LWT)
-classification (Jones et al. 1993) at any grid-box in northern and southern Hemisphere
-extratropics in reanalysis and GCM data. It is designed to process netCDF
+The pyLamb package is a set of Python scripts and functions made to
+evaluate global climate models in terms of atmospheric circulation
+patterns on multiple time-scales and also explores the low frequency 
+variability seen in observations. To this end, the 2 main scripts 
+<interpolate_xesmf.py> and <makecalcs_parallel.py> are provided that 
+must be run sequentially in order to classify continuous 6-hourly 
+sea-level pressure patterns into 27 discrete the Lamb Weather Types
+(LWTs, Jones et al. 1993) at any grid-box in northern and southern Hemisphere
+extratropics in reanalysis and GCM data. The package is designed to process netCDF
 data from ESGF of virtually any GCM participating in CMIP5 and 6 and
 additionally comes with an extensive metadata archive on these GCMs.
 The scripts have the following tasks and should be run in the following
@@ -45,9 +50,5 @@ mean / median GCM performance
 
 Within these scripts, a large number of input parameters can be set
 that are commented to understand their meaning or purpose. This is
-followed by a line stating:
-
-## EXECUTE ##########################
-
-from where on no futher user options appear, i.e. the script is running
-with the parameters set before.
+followed by a line stating "EXECUTE" from where on no futher user
+options appear, i.e. the script is run with the parameters set before.
