@@ -30,34 +30,48 @@ import os
 import time
 from cftime import DatetimeNoLeap
 import xesmf as xe
+#import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 exec(open('analysis_functions.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 ##MEMORY EFFICIENT VERSION OF interpolator_north.py, loads GCM data file by file using xarray.open_dataset instead of xarray.open_mfdataset
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
-experiment = 'historical' #historical, 20c, amip, piControl, ssp245, ssp585
+experiment = 'dcppA' #historical, 20c, amip, piControl, ssp245, ssp585, dcppA
+lead_time = 10 #lead time in years, only applied if experiment = 'dcppA'
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
-hemis = 'sh'
+hemis = 'nh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
-## historical runs successfully interpolated for the NH and SH
-model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','noresm2_mm','awi_esm_1_1_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','hadgem2_cc','hadgem2_es','hadgem3_gc31_mm','noresm2_lm','noresm2_lm','nesm3','nesm3','mri_esm2_0','noresm2_mm','miroc_es2l','miroc_es2l','ec_earth3_veg','ec_earth3_veg_lr','miroc6','ec_earth3_aerchem','ec_earth3_cc','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','noresm2_lm','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','hadgem2_es','mpi_esm_1_2_lr','access_esm1_5','noresm2_mm','ipsl_cm5a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','mpi_esm_1_2_hr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mri_esm2_0','mri_esm2_0','mri_esm2_0','fgoals_g2','fgoals_g3','kiost_esm','iitm_esm','taiesm1','csiro_mk3_6_0','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','gfdl_cm3','giss_e2_r','era5','kace_1_0_g','cmcc_cm2_hr4','inm_cm5','canesm5','gfdl_esm2g','miroc6','ec_earth3_veg','gfdl_esm4','bcc_csm1_1','cnrm_cm6_1','cnrm_cm6_1','cmcc_esm2','ipsl_cm5a_lr','interim','jra55','cnrm_cm6_1_hr','cnrm_cm6_1','ec_earth3_aerchem','ec_earth3_cc','cnrm_esm2_1','mpi_esm_1_2_hr','giss_e2_1_g', 'sam0_unicon', 'bcc_csm2_mr', 'gfdl_cm4','ec_earth3','access13', 'mpi_esm_mr', 'cmcc_cm','access10', 'ccsm4', 'ec_earth', 'canesm2', 'mpi_esm_lr', 'cnrm_cm5', 'giss_e2_h', 'inm_cm4', 'miroc_esm', 'mri_esm1', 'noresm1_m', 'ipsl_cm5a_mr', 'miroc5', 'hadgem2_es','mri_esm2_0','mpi_esm_1_2_ham','mpi_esm_1_2_lr','mpi_esm_1_2_lr','cnrm_esm2_1','access_cm2','access_esm1_5','cmcc_cm2_sr5','ipsl_cm6a_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','nesm3','nesm3','nesm3']
-mrun =  ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r11i1p1f1','r2i1p1f1','r1i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r1i1p1','r1i1p1','r1i1p1f3','r1i1p1f1','r2i1p1f1','r1i1p1f1','r5i1p1f1','r4i1p1f1','r1i1p1f1','r1i1p1f2','r5i1p1f2','r1i1p1f1','r1i1p1f1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1','r3i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r22i1p1f1','r15i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1','r32i1p1f1','r2i1p1','r8i1p1f1','r3i1p1f1','r3i1p1f1','r4i1p1','r10i1p1f1','r11i1p1f1','r12i1p1f1','r13i1p1f1','r10i1p1f1','r2i1p1','r3i1p1','r5i1p1','r6i1p1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r2i1p1f1','r3i1p1f1','r5i1p1f1','r1i1p1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1','r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r1i1p1','r6i1p1','r1i1p1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r1i1p2f1','r1i1p1','r1i1p1f1','r6i1p1f1','r1i1p1f1','r1i1p1','r2i1p1f2','r3i1p1f2','r1i1p1f1','r1i1p1','r1i1p1','r1i1p1','r1i1p1f2','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r24i1p1f1','r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1', 'r6i1p1', 'r12i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r6i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r25i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1']
-mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','360_day','360_day','noleap','noleap','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','noleap','gregorian','noleap','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','gregorian','360_day','noleap','noleap','noleap','noleap','gregorian','gregorian','noleap','noleap','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap', 'noleap', 'noleap', 'noleap','gregorian','proleptic_gregorian', 'gregorian', 'gregorian','proleptic_gregorian', 'noleap', 'gregorian', 'noleap', 'gregorian', 'gregorian', 'noleap', 'noleap', 'gregorian', 'gregorian', 'noleap', 'gregorian', '360_day', '360_day','gregorian','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','proleptic_gregorian', 'noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+# # dcpp runs
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3']
+# mrun = ['r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
-#filter out cmip6 runs which are not 'ec_earth3_veg','mpi_esm_1_2_hr' (because their catalogs for 1850-2014 have already been calculated)
-cmip_list = []
-for mm in model:
-    runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(mm)
-    cmip_list.append(cmip)
-#retain only cmip6 runs
-cmip6_ind = np.where((np.array(cmip_list) == 6) & (~np.isin(np.array(model),('ec_earth3_veg','mpi_esm_1_2_hr'))))[0]
-model = np.array(model)[cmip6_ind].tolist()
-mrun = np.array(mrun)[cmip6_ind].tolist()
-mycalendar = np.array(mycalendar)[cmip6_ind].tolist()
+# dcpp runs
+model = ['ec_earth3']
+model_label = ['EC-Earth3']
+mrun = ['r2i1p1f1']
+mycalendar = ['gregorian']
+
+# ## historical runs successfully interpolated for the NH and SH
+# model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','noresm2_mm','awi_esm_1_1_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','hadgem2_cc','hadgem2_es','hadgem3_gc31_mm','noresm2_lm','noresm2_lm','nesm3','nesm3','mri_esm2_0','noresm2_mm','miroc_es2l','miroc_es2l','ec_earth3_veg','ec_earth3_veg_lr','miroc6','ec_earth3_aerchem','ec_earth3_cc','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','noresm2_lm','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','hadgem2_es','mpi_esm_1_2_lr','access_esm1_5','noresm2_mm','ipsl_cm5a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','mpi_esm_1_2_hr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mri_esm2_0','mri_esm2_0','mri_esm2_0','fgoals_g2','fgoals_g3','kiost_esm','iitm_esm','taiesm1','csiro_mk3_6_0','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','gfdl_cm3','giss_e2_r','era5','kace_1_0_g','cmcc_cm2_hr4','inm_cm5','canesm5','gfdl_esm2g','miroc6','ec_earth3_veg','gfdl_esm4','bcc_csm1_1','cnrm_cm6_1','cnrm_cm6_1','cmcc_esm2','ipsl_cm5a_lr','interim','jra55','cnrm_cm6_1_hr','cnrm_cm6_1','ec_earth3_aerchem','ec_earth3_cc','cnrm_esm2_1','mpi_esm_1_2_hr','giss_e2_1_g', 'sam0_unicon', 'bcc_csm2_mr', 'gfdl_cm4','ec_earth3','access13', 'mpi_esm_mr', 'cmcc_cm','access10', 'ccsm4', 'ec_earth', 'canesm2', 'mpi_esm_lr', 'cnrm_cm5', 'giss_e2_h', 'inm_cm4', 'miroc_esm', 'mri_esm1', 'noresm1_m', 'ipsl_cm5a_mr', 'miroc5', 'hadgem2_es','mri_esm2_0','mpi_esm_1_2_ham','mpi_esm_1_2_lr','mpi_esm_1_2_lr','cnrm_esm2_1','access_cm2','access_esm1_5','cmcc_cm2_sr5','ipsl_cm6a_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','nesm3','nesm3','nesm3']
+# mrun =  ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r11i1p1f1','r2i1p1f1','r1i1p1f1','r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r1i1p1','r1i1p1','r1i1p1f3','r1i1p1f1','r2i1p1f1','r1i1p1f1','r5i1p1f1','r4i1p1f1','r1i1p1f1','r1i1p1f2','r5i1p1f2','r1i1p1f1','r1i1p1f1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1','r3i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r22i1p1f1','r15i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1','r32i1p1f1','r2i1p1','r8i1p1f1','r3i1p1f1','r3i1p1f1','r4i1p1','r10i1p1f1','r11i1p1f1','r12i1p1f1','r13i1p1f1','r10i1p1f1','r2i1p1','r3i1p1','r5i1p1','r6i1p1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r2i1p1f1','r3i1p1f1','r5i1p1f1','r1i1p1','r3i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1','r5i1p1f1','r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r1i1p1','r6i1p1','r1i1p1','r1i1p1f1','r1i1p1f1','r2i1p1f1','r1i1p2f1','r1i1p1','r1i1p1f1','r6i1p1f1','r1i1p1f1','r1i1p1','r2i1p1f2','r3i1p1f2','r1i1p1f1','r1i1p1','r1i1p1','r1i1p1','r1i1p1f2','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1', 'r1i1p1f1', 'r1i1p1f1', 'r24i1p1f1','r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1', 'r6i1p1', 'r12i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r6i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1', 'r1i1p1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f2','r1i1p1f1','r1i1p1f1','r1i1p1f1','r1i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r25i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1']
+# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','360_day','360_day','noleap','noleap','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','360_day','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','noleap','gregorian','noleap','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','noleap','noleap','gregorian','360_day','noleap','noleap','noleap','noleap','gregorian','gregorian','noleap','noleap','gregorian','gregorian','noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','noleap', 'noleap', 'noleap', 'noleap','gregorian','proleptic_gregorian', 'gregorian', 'gregorian','proleptic_gregorian', 'noleap', 'gregorian', 'noleap', 'gregorian', 'gregorian', 'noleap', 'noleap', 'gregorian', 'gregorian', 'noleap', 'gregorian', '360_day', '360_day','gregorian','gregorian','gregorian','gregorian','gregorian','proleptic_gregorian','proleptic_gregorian', 'noleap','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+
+# #filter out cmip6 runs which are not 'ec_earth3_veg','mpi_esm_1_2_hr' (because their catalogs for 1850-2014 have already been calculated)
+# cmip_list = []
+# for mm in model:
+    # runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(mm)
+    # cmip_list.append(cmip)
+# #retain only cmip6 runs
+# cmip6_ind = np.where((np.array(cmip_list) == 6) & (~np.isin(np.array(model),('ec_earth3_veg','mpi_esm_1_2_hr'))))[0]
+# model = np.array(model)[cmip6_ind].tolist()
+# mrun = np.array(mrun)[cmip6_ind].tolist()
+# mycalendar = np.array(mycalendar)[cmip6_ind].tolist()
 
 ## amip runs successfully interpolated for the NH and SH
 #model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','miroc6','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -88,9 +102,15 @@ starttime = time.time()
 #root to input netcdf files
 if filesystem == 'extdisk': #for external hard disk
     root1 = '/media/swen/ext_disk2/datos/GCMData/'
+    savedir1 = root1
     rundir = home+'/datos/tareas/lamb_cmip5/pyLamb'
-elif filesystem == 'lustre': #for filesystems at MeteoGalicia mounted by Sergio
+elif (filesystem == 'lustre') & (experiment != 'dcppA'): #for filesystems at MeteoGalicia mounted by Sergio
     root1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
+    savedir1 = root1
+    rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
+elif (filesystem == 'lustre') & (experiment == 'dcppA'):
+    root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_LT'+str(lead_time)
+    savedir1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
 else:
     raise Exception('ERROR: unknown entry for <filesystem>!')
@@ -122,7 +142,7 @@ for mm in list(range(len(model))):
         lonname = 'longitude' #'longitude'
         varname = 'msl'
         timestep = '6h'
-    elif model[mm] == 'ec_earth3' and mrun[mm] == 'r2i1p1f1':
+    elif model[mm] == 'ec_earth3' and mrun[mm] == 'r2i1p1f1' and experiment != 'dcppA':
         latname = 'latitude'
         lonname = 'longitude'
         varname = 'psl'
@@ -141,12 +161,12 @@ for mm in list(range(len(model))):
     root2 = '/'+timestep+'/'+experiment+'/'#second part of root to source nc files
     
     #check whether the target directory where the interpolated psl values will be save exists. If does not exists, create it.
-    savedir = root1 + model[mm] + root2 + mrun[mm] + '/psl_interp'
+    savedir = savedir1 + model[mm] + root2 + mrun[mm] + '/psl_interp'
     if os.path.isdir(savedir) != True:
         os.makedirs(savedir)
 
     #clean previously generated temporary files
-    prev_tmpdir = root1 + model[mm] + root2 + mrun[mm]+'/psl_interp'
+    prev_tmpdir = savedir
     listdir_tmpfiles = os.listdir(prev_tmpdir)
     if  len(listdir_tmpfiles) > 0:
         dropind = []
@@ -171,14 +191,27 @@ for mm in list(range(len(model))):
         del(listdir_tmpfiles)
 
     #generate a list of nc files in source directory containing the GCM data
-    listdir_raw = os.listdir(root1 + model[mm] + root2 + mrun[mm])
+    if experiment == 'dcppA' and filesystem == 'lustre':
+        listdir_raw = os.listdir(root1)
+    else:
+        listdir_raw = os.listdir(root1 + model[mm] + root2 + mrun[mm])
     dropind = []
+    #check whether the files located in listdir_raw are expected and delete from this list if they are not expected; do this file per file
     for ff in list(range(len(listdir_raw))):
-        if listdir_raw[ff][-3:] != '.nc' and listdir_raw[ff][-4:] != '.nc4':
-            dropind.append(ff)
+        if experiment == 'dcppA':
+            print('experiment was set to '+experiment+'. Due to the presence of files for various models in '+root1+' for this specific experiment, it is also checked whether the model label '+model_label[mm]+' appears in the individual input file !') 
+            if model_label[mm] in listdir_raw[ff] and mrun[mm] in listdir_raw[ff]:
+                print(model_label[mm]+' and '+mrun[mm]+' have been found in '+listdir_raw[ff]+', so this file is retained in the list to be loaded.')
+            else:
+                dropind.append(ff)
+        else:
+            if listdir_raw[ff][-3:] != '.nc' and listdir_raw[ff][-4:] != '.nc4': #delete the individual file from the Python list (listdir_raw) if it does not meet the criteria specified in this line
+                dropind.append(ff)
+    
     listdir = np.delete(listdir_raw,dropind).tolist()
     #put listdir into alphabetical order, note that the characters of the filenames must be lowercase, see https://www.tutorialspoint.com/How-to-list-down-all-the-files-alphabetically-using-Python
     listdir = sorted(listdir)
+
     #listdir = listdir[0:2] #uncomment to check the script with two input files only; two are needed because the loop starting in line 141 assumes a string if listdir only contains a single file.
     ##print results
     print('INFO: The following files and directories are located in the source directory:')
@@ -188,7 +221,11 @@ for mm in list(range(len(model))):
     
     tmpfiles_list = []
     for infile in listdir:
-        fullpath = root1 + model[mm] + root2 + mrun[mm]+'/'+infile
+        #construct full path to the file as a function of the experiment. Note that the directory structure for the dcppa experiment is different from that of the other experiments
+        if experiment == 'dcppA':
+            fullpath = root1+'/'+infile
+        else:
+            fullpath = root1 + model[mm] + root2 + mrun[mm]+'/'+infile
         print('INFO: loading dataset '+fullpath)
         dataset = xr.open_dataset(fullpath, engine='netcdf4')
         
@@ -328,7 +365,12 @@ for mm in list(range(len(model))):
         #create xarray dataset and save to a temporary netcdf file; one for each input nc file
         starthour = str(dates[0]).replace('-','').replace(' ','').replace(':','')
         endhour = str(dates[-1]).replace('-','').replace(' ','').replace(':','')
-        tmpfile = root1 + model[mm] + root2 + mrun[mm] + '/psl_interp' + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis +'_'+starthour+'_'+endhour+'.nc'
+        
+        #save individual temporary file for the specific time period
+        if experiment == 'dcppA':
+            tmpfile = savedir + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis + '_' +str(lead_time)+ 'y_' +starthour+'_'+endhour+'.nc'
+        else:
+            tmpfile = savedir + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis +'_'+starthour+'_'+endhour+'.nc'
         print('INFO: creating temporary file '+tmpfile)
 
         #convert non-standard calendars, filter time period and save in netCDF format
@@ -352,7 +394,10 @@ for mm in list(range(len(model))):
         
     #then load the newly created temporary files and save as one
     print('INFO: concatanate from year '+str(taryears[0])+' to '+str(taryears[1])+'...')
-    tmpfiles = root1 + model[mm] + root2 + mrun[mm] + '/psl_interp' + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis +'*.nc' 
+    if experiment == 'dcppA':
+        tmpfiles = savedir + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis + '_' + str(lead_time)+'y*.nc'
+    else:
+        tmpfiles = savedir + '/tmp_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis +'*.nc'
     nc = xr.open_mfdataset(tmpfiles)
     nc = nc.astype(precision)
     dates_all = nc.indexes['time']
@@ -376,16 +421,18 @@ for mm in list(range(len(model))):
         nc.lon.attrs[item[0]] = item[1]
     for item in attrs_lat:
         nc.lat.attrs[item[0]] = item[1]
-        
-    # savedir = root1 + model[mm] + root2 + mrun[mm] + '/psl_interp'
-    # if os.path.isdir(savedir) != True:
-        # os.makedirs(savedir)
-
-    newfile = savedir + '/psl_interp_'+timestep+'rPlev_' + model[mm] +'_'+experiment+'_' + mrun[mm] + '_' + hemis +'.nc'
+    
+    #save the final, concatenated file
+    if experiment == 'dcppA':
+        newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time)+'y.nc'
+    else:
+        newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'.nc'
+    
     nc.to_netcdf(newfile)
     nc.close()
     del(nc,getind,starthour_all,endhour_all,dates_all)
     #del(nc,getind,starthour_all,endhour_all)
+    
     #delete the newly created temporary files
     print('INFO: deleting '+tmpfiles)
     for tt in tmpfiles_list:
@@ -402,4 +449,5 @@ elaptime = endtime - starttime
 print('INFO: The following calendars were assinged; one for each GCM run:')
 print(calendar_list)
 print('interpolator_highres_py3.py has been run successfully! The elapsed time is '+str(elaptime)+'seconds, exiting now...')
-quit()
+exit
+#quit()
