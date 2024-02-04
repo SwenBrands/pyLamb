@@ -125,7 +125,8 @@ def get_target_period(model_f,experiment_f,cmip_f):
         taryears_f=[1901,2010]
         timestep_f = '3h'
     elif experiment_f == 'dcppA':
-        taryears_f=[1970,2029]
+        #taryears_f=[1970,2029]
+        taryears_f=[1971,2028]
         timestep_f = '6h'
     else:
         raise Exception('Error: check entry for <experiment_f> !')
