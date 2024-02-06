@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-''''This script plots composites maps for the 27 LWTs for a given location and time period'''
+''''This script calculates and plots Lamb Weather Type periodgrams, time series and signal-to-noise ratios at specified locations'''
 
 #load packages
 import numpy as np
@@ -26,6 +26,7 @@ tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
 taryears = [1971,2028] #start and end year, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 lead_time = 10 #currently only used for experiment = dcppA; this is the lead time of the forecasts that were concatenated to form a single continuous time series in interpolator_xesmf.py
 tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte
+center_wrt = 'ensemble_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 nfft_quotients = [4] # n / nff_quotient equals the length of the maximum period; nfft_quotient = number of non-overlapping sub-periods used by the Welch method
 
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
@@ -38,7 +39,7 @@ periodogram_type = 'periodogram' #Welch or periodogram
 fs = 1 #sampling frequency for 3-hourly data, 30*8 is monthly, 90*8 is seasonal, alternatively 1 for yearly data
 window = 'hann' #hann, nuttall etc. http://qingkaikong.blogspot.com/2017/01/signal-processing-finding-periodic.html
 scaling = 'spectrum'
-repetitions = 100 #10000 is ideal
+repetitions = 30 #10000 is ideal
 detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 ci_percentiles = [2.5,5.,10.,90.,95.,97.5] #these crtical values for power spectra will be calculated
 ci_tar_percentile = 95. #and this one will be plotted
@@ -321,8 +322,13 @@ for qq in np.arange(len(nfft_quotients)):
         runmeans_i = wt_agg.rolling(time=meanperiod,center=True,min_periods=None).mean() # calculate running temporal mean values for each member
         runmeans_per_run =  np.tile(runmeans_i.mean(dim='time'),(len(years),1)).transpose() # calculate the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
         #calculate anomalies w.r.t to global ensemble mean or member-wise temporal mean
-        #runmeans_i_anom = runmeans_i - runmeans.mean() # calculate the running mean values for each individual model run minus the overall ensemble and temporal mean values (anomalies w.r.t. overall ensemble mean)
-        runmeans_i_anom = runmeans_i - runmeans_per_run # calculate the running mean values for each individual model run minus the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
+        if center_wrt == 'ensemble_mean':
+            runmeans_i_anom = runmeans_i - runmeans.mean() # calculate the running mean values for each individual model run minus the overall ensemble and temporal mean values (anomalies w.r.t. overall ensemble mean)
+        elif center_wrt == 'memberwise_mean':
+            runmeans_i_anom = runmeans_i - runmeans_per_run # calculate the running mean values for each individual model run minus the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
+        else:
+            raise Exception('ERROR: check entry for <center_wrt> input parameter !')
+
         runsignal = runmeans_i_anom.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
         runnoise = runmeans_i_anom.std(dim='member').rename('noise') #ensemble standard deviation for each temporal mean period
         runstn = np.abs(runsignal / runnoise).rename('signal-to-noise') #signal-to-noise ration for each temporal mean period
@@ -331,12 +337,13 @@ for qq in np.arange(len(nfft_quotients)):
         min_occ = runstn.copy() #get a new xarray data array from an existing one
         min_occ[:] = wt_agg.min().values #overall minimum yearly WT frequency of all runs, used for plotting purpose below
         fig = plt.figure()
-        runstn.plot()
         critval_stn.plot()
+        runstn.plot()
+        #runnoise.plot()
         if experiment == 'dcppA':
-            savename_stn = timeseries_dir+'/STN_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(lead_time)+'y_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
+            savename_stn = timeseries_dir+'/STN_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
         else:
-            savename_stn = timeseries_dir+'/STN_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
+            savename_stn = timeseries_dir+'/STN_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_ctr_'+center_wrt+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
         plt.savefig(savename_stn,dpi=dpival)
         plt.close('all')
         del(fig)
@@ -356,13 +363,14 @@ for qq in np.arange(len(nfft_quotients)):
         plt.xlim([years.min(),years.max()])
         plt.ylim([wt_agg.min(),wt_agg.max()])
         plt.title('LWT '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+' members '+str(taryears[0])+'-'+str(taryears[1]))
-        text_x = np.percentile(years,84) # x coordinate of text inlet
+        text_x = np.percentile(years,70) # x coordinate of text inlet
         text_y = wt_agg.values.max() - (wt_agg.values.max() - wt_agg.values.min())/25 # y coordinate of text inlet
         #plt.text(text_x,text_y, '$\sigma$ / $\mu$ = '+str(np.round(np.nanstd(runmeans)/np.nanmean(runmeans),3)),size=8) #plot standard deviation of running ensemble mean time series as indicator of forced response
+        plt.text(text_x,text_y, 'temporal mean $\sigma$ = '+str(np.round(np.nanmean(runnoise),3)),size=8) #plot temporal mean of the running standard deviation of the decadal mean LWT frequency anomalies from each member
         if experiment == 'dcppA':
-            savename_ts = timeseries_dir+'/timeseries_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
+            savename_ts = timeseries_dir+'/timeseries_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_'+'_ctr_'+center_wrt+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
         else:
-            savename_ts = timeseries_dir+'/timeseries_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
+            savename_ts = timeseries_dir+'/timeseries_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
         plt.savefig(savename_ts,dpi=dpival)
         plt.close('all')
         del(fig)

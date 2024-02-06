@@ -74,6 +74,13 @@ def get_ensemble_config(ensemble_f,experiment_f):
         mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'ec_earth3' and experiment_f == 'historical':
+        #model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        #mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1']
+        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1']
+        model_label_f = 'EC-Earth3'
+        tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
         model_f = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg']
         mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r10i1p1f1','r11i1p1f1']
