@@ -69,6 +69,11 @@ def get_ensemble_config(ensemble_f,experiment_f):
         mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r9i1p1f1','r10i1p1f1']
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
+    elif ensemble_f == 'ec_earth3' and experiment_f == 'dcppA':
+        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        model_label_f = 'EC-Earth3'
+        tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
         model_f = ['ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg']
         mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r10i1p1f1','r11i1p1f1']
