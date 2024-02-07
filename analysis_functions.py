@@ -100,7 +100,7 @@ def get_ensemble_config(ensemble_f,experiment_f):
         raise Exception('ERROR: unknown entry for <ensemble_f> and/or <experiment_f> input parameters !')
     return(model_f,mrun_f,model_label_f,tarhours_f)
 
-def get_target_period(model_f,experiment_f,cmip_f):
+def get_target_period(model_f,experiment_f,cmip_f=None):
     '''returns the target period (taryears_f) and timestep (timestep_f) to be used in the analyses as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     if experiment_f == 'amip' and cmip_f == 5:

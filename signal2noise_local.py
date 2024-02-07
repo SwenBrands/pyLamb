@@ -17,14 +17,15 @@ exec(open('analysis_functions.py').read())
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameter
-ensemble = ['ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-ensemble_color = ['grey','blue']
-ensemble_linestyle = ['solid','dotted']
-experiment = ['dcppA','historical'] #historical, amip, piControl, 20c or dcppA
-taryears = [[1971,2028],[1979,2014]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+ensemble = ['cera20c','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+ensemble_color = ['black','grey','blue']
+ensemble_linestyle = ['dashed','solid','dotted']
+experiment = ['20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
+taryears = [[1971,2010],[1971,2028],[1979,2014]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 
 city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+#city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
 lead_time = 10 #currently only used for experiment = dcppA; this is the lead time of the forecasts that were concatenated to form a single continuous time series in interpolator_xesmf.py
@@ -39,6 +40,7 @@ meanperiod = 10 #running-mean period in years
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
 
 #visualization options
+plot_sig_stn_only = 'yes' #plot only significant signal-to-noise ratios in pcolor format, yes or no
 dpival = 300 #resolution of the output figure in dots per inch
 outformat = 'pdf' #png, pdf, etc.
 titlesize = 8. #Font size of the titles in the figures
@@ -91,10 +93,15 @@ for en in np.arange(len(ensemble)):
             raise Exception('ERROR: unknown entry for <tarlat>!')
         
         for mm in list(range(len(model))):
-            #get metadata for this GCM
-            runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm]) #check whether historical GCM configurations agree with those used in DCPPA ! 
-            #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-            file_taryears, timestep = get_target_period(model[mm],experiment[en],cmip)
+            #get metadata for this GCM, incluing start and end year label of the LWT input files to be loaded below
+            if experiment[en] == '20c':
+                print('get_historical_metadata.py is not called for '+ensemble[en])
+                file_taryears, timestep = get_target_period(model[mm],experiment[en])
+            elif experiment[en] in ('amip','dcppA','historical','piControl'):
+                runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm]) #check whether historical GCM configurations agree with those used in DCPPA ! 
+                file_taryears, timestep = get_target_period(model[mm],experiment[en],cmip)
+            else:
+                raise Exception('ERROR: unknown entry in <experiment> input parameter')
             file_startyear = file_taryears[0]
             file_endyear = file_taryears[1]
             
@@ -206,7 +213,7 @@ for en in np.arange(len(ensemble)):
         plt.xlim([years.min(),years.max()])
         plt.ylim([wt_agg.min(),wt_agg.max()])
         plt.title('LWT '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+' members '+str(taryears[en][0])+'-'+str(taryears[en][1]))
-        text_x = np.percentile(years,50) # x coordinate of text inlet
+        text_x = np.percentile(years,30) # x coordinate of text inlet
         text_y = wt_agg.values.max() - (wt_agg.values.max() - wt_agg.values.min())/25 # y coordinate of text inlet
         #plt.text(text_x,text_y, '$\sigma$ / $\mu$ = '+str(np.round(np.nanstd(runmeans)/np.nanmean(runmeans),3)),size=8) #plot standard deviation of running ensemble mean time series as indicator of forced response
         plt.text(text_x,text_y, 'temporal mean and minimum $\sigma$ = '+str(np.round(np.nanmean(runnoise),3))+' and '+str(np.round(np.nanmin(runnoise),3)),size=8) #plot temporal mean of the running standard deviation of the decadal mean LWT frequency anomalies from each member
@@ -258,6 +265,9 @@ runmeans_i_all.experiment.attrs['ensemble'] = ensemble
 critvals_study_period = np.tile(critval_stn[0].values,len(study_years))
 exp_label = str(experiment).replace('[','').replace(']','').replace("'","").replace(', ','_')
 #detailed results for each city
+rho1_all = np.zeros(len(city))
+rho2_all = np.zeros(len(city))
+rho3_all = np.zeros(len(city))
 for cc in np.arange(len(city)):
     fig = plt.figure()
     plt.plot(stn_all.time.values,critvals_study_period)
@@ -279,11 +289,17 @@ for cc in np.arange(len(city)):
         plt.plot(study_years_mat,np.transpose(runmeans_i_all[en,:,cc,:].values),linewidth=0.5,color=ensemble_color[en],linestyle=ensemble_linestyle[en])
         #plt.plot(years_mat,np.transpose(runmeans_i.values),linewidth=1)
     
-    #plot corrleation coefficient in upper right corner
-    rho = xr.corr(runmeans_all[0,cc,:],runmeans_all[1,cc,:]) #calculate the correlation between the two running ensemble decadal mean time series
-    text_x = np.percentile(study_years,50) # x coordinate of text inlet
-    text_y = runmeans_i_all.values.max() - (runmeans_i_all.values.max() - runmeans_i_all.values.min())/25 # y coordinate of text inlet
-    plt.text(text_x,text_y, 'rho = '+str(np.round(rho,3)),size=8)
+    #plot corrleation coefficients in the titles
+    rho1 = xr.corr(runmeans_all.sel(experiment='dcppA',city=city[cc]),runmeans_all.sel(experiment='historical',city=city[cc])) #calculate the correlation between the two running ensemble decadal mean time series
+    rho2 = xr.corr(runmeans_all.sel(experiment='dcppA',city=city[cc]),runmeans_all.sel(experiment='20c',city=city[cc]))
+    rho3 = xr.corr(runmeans_all.sel(experiment='historical',city=city[cc]),runmeans_all.sel(experiment='20c',city=city[cc]))
+    rho1_all[cc] = rho1
+    rho2_all[cc] = rho2
+    rho3_all[cc] = rho3
+    plt.title(city[cc]+': r(dcppA-hist) = '+str(rho1.round(2).values)+', r(dcppA-obs) = '+str(rho2.round(2).values)+', r(hist-obs) = '+str(rho3.round(2).values), size = 8)
+    # text_x = np.percentile(study_years,50) # x coordinate of text inlet
+    # text_y = runmeans_i_all.max() - (runmeans_i_all.max() - runmeans_i_all.min())/25 # y coordinate of text inlet
+    # plt.text(text_x,text_y, 'rho = '+str(np.round(rho,3)),size=8)
     
     #save the figure
     savename_ts_all = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
@@ -294,18 +310,47 @@ for cc in np.arange(len(city)):
 #plot summary city-scale results (difference between dcppA and historical) in pcolor format, difference in signal-to-noise ratio
 fig = plt.figure()
 stn_diff = stn_all.sel(experiment='dcppA')-stn_all.sel(experiment='historical')
+xlim2pcolor = [study_years[~np.isnan(stn_diff[0,:])][0]-0.5,study_years[~np.isnan(stn_diff[0,:])][-1]+0.5]
 stn_diff.plot() #plots a pcolor of the differences in the signal-to-noise ratios along the time axis (10-yr running differences)
+plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
 plt.ylim(-0.5,len(city)-0.5)
+plt.title('dcppa minus historical')
 savename_diff_stn = figs+'/'+model[mm]+'/pcolor_diffstn_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
 plt.savefig(savename_diff_stn,dpi=dpival)
 plt.close('all')
 del(fig)
 
+#plot signal-to-noise ratio separately for dcppA and historical
+stn_all_model = stn_all.sel(experiment=['dcppA','historical']) #exclude the reanalysis, focus on model experiments
+if plot_sig_stn_only == 'yes':
+    print('WARNING: Only significant signal-to-noise ratios are plotted in pcolor format!')
+    stn_all_model = stn_all_model.where(stn_all_model > critval_stn[0])
+
+stn_model_max = stn_all_model.max().values #maximum signal-to-noise ratio across all model experiments
+for exp in stn_all_model.experiment.values:
+    fig = plt.figure()
+    xlim2pcolor = [study_years[~np.isnan(stn_diff[0,:])][0]-0.5,study_years[~np.isnan(stn_diff[0,:])][-1]+0.5]    
+    stn_all_model.sel(experiment=exp).plot(vmin=0,vmax=stn_model_max,edgecolors='k') #plots a pcolor of the differences in the signal-to-noise ratios along the time axis (10-yr running differences)
+    plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
+    plt.ylim(-0.5,len(city)-0.5)
+    #set title and savename
+    if exp == 'dcppA':
+        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+        plt.title(exp+', forecast year '+str(lead_time))
+    else:
+        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+        plt.title(exp)
+    plt.savefig(savename_dcppa_stn,dpi=dpival)
+    plt.close('all')
+    del(fig)
+
 #summary results (difference between dcppA and historical) in pcolor format, difference in noise / standard deviation
 fig = plt.figure()
 noise_diff = noise_all.sel(experiment='dcppA')-noise_all.sel(experiment='historical')
 noise_diff.plot() #plots a pcolor of the differences in the signal-to-noise ratios along the time axis (10-yr running differences)
+plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
 plt.ylim(-0.5,len(city)-0.5)
+plt.title('dcppa minus historical')
 savename_diff_noise = figs+'/'+model[mm]+'/pcolor_diffnoise_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
 plt.savefig(savename_diff_noise,dpi=dpival)
 plt.close('all')
