@@ -38,16 +38,22 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
 experiment = 'dcppA' #historical, 20c, amip, piControl, ssp245, ssp585, dcppA
-lead_time = 10 #lead time in years, only applied if experiment = 'dcppA'
+lead_time = 5 #lead time in years, only applied if experiment = 'dcppA'
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
 hemis = 'nh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
+# # historical runs extended with ssp245
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+
 # dcppA runs
 model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3']
+model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #used to check the filename or link in the target directory
 mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
 mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 

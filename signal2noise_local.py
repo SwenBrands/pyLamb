@@ -21,11 +21,11 @@ ensemble = ['cera20c','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_
 ensemble_color = ['black','grey','blue']
 ensemble_linestyle = ['dashed','solid','dotted']
 experiment = ['20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
-taryears = [[1971,2010],[1971,2028],[1979,2014]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears = [[1971,2010],[1971,2028],[1971,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 
-city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+#city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
 lead_time = 10 #currently only used for experiment = dcppA; this is the lead time of the forecasts that were concatenated to form a single continuous time series in interpolator_xesmf.py
@@ -276,7 +276,7 @@ for cc in np.arange(len(city)):
     plt.ylim(0,stn_all.max().values)
     plt.title(city[cc]+', '+str(ensemble[0])+', '+str(len(mrun))+' members each')
     plt.legend(['critval']+experiment)
-    savename_stn_city = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+    savename_stn_city = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
     plt.savefig(savename_stn_city,dpi=dpival)
     plt.close('all')
     del(fig)
@@ -302,7 +302,7 @@ for cc in np.arange(len(city)):
     # plt.text(text_x,text_y, 'rho = '+str(np.round(rho,3)),size=8)
     
     #save the figure
-    savename_ts_all = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+    savename_ts_all = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
     plt.savefig(savename_ts_all,dpi=dpival)
     plt.close('all')
     del(fig)
@@ -315,7 +315,7 @@ stn_diff.plot() #plots a pcolor of the differences in the signal-to-noise ratios
 plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
 plt.ylim(-0.5,len(city)-0.5)
 plt.title('dcppa minus historical')
-savename_diff_stn = figs+'/'+model[mm]+'/pcolor_diffstn_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+savename_diff_stn = figs+'/'+model[mm]+'/pcolor_diffstn_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
 plt.savefig(savename_diff_stn,dpi=dpival)
 plt.close('all')
 del(fig)
@@ -335,10 +335,10 @@ for exp in stn_all_model.experiment.values:
     plt.ylim(-0.5,len(city)-0.5)
     #set title and savename
     if exp == 'dcppA':
-        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time)+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.title(exp+', forecast year '+str(lead_time))
     else:
-        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+        savename_dcppa_stn = figs+'/'+model[mm]+'/pcolor_stn_'+exp+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.title(exp)
     plt.savefig(savename_dcppa_stn,dpi=dpival)
     plt.close('all')

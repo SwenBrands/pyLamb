@@ -78,7 +78,7 @@ def get_ensemble_config(ensemble_f,experiment_f):
         #model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
         #mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1']
         model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-        mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1']
+        mrun_f = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1'] #these are the runs which were concatenated with the ssp245 experiments to cover 1979-2028 using links
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
@@ -111,6 +111,10 @@ def get_target_period(model_f,experiment_f,cmip_f=None):
         timestep_f = '6h'
     elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
         taryears_f=[1979,2017]
+        timestep_f = '6h'
+    elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1971-2028 for comparison of the historical+ssp245 runs with the dcppA runs
+        print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp runs to cover the 1979-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
+        taryears_f = [1971,2028]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f in ('ec_earth3_veg','mpi_esm_1_2_hr'):
         taryears_f=[1850,2014]
