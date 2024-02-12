@@ -38,7 +38,7 @@ home = os.getenv('HOME')
 filesystem = 'lustre'
 hemis = 'nh' #sh or nh
 saveindices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
-lead_time = 10 #lead time in years, currently only used for dcppA experiments
+lead_time = 1 #lead time in years, currently only used for dcppA experiments
 
 # historical runs extended with ssp245 to compare with dcppA runs below
 model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -101,10 +101,10 @@ for mm in list(range(len(model))):
     runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
 
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-    taryears, timestep = get_target_period(model[mm],experiment,cmip)
+    taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time)
     
     #Print the main script configuration to inform the user during execution from one GCM / reanalysis to another
-    print('INFO: Calculating Lamb Weather types for '+model[mm]+' for '+experiment+' and time period '+str(taryears[0])+' to '+str(taryears[1])+'...')
+    print('INFO: Calculating Lamb Weather types for '+model[mm]+' for '+experiment+', time period '+str(taryears[0])+' to '+str(taryears[1])+', and lead-time (applied only for dcppA experiment) of '+str(lead_time)+' year(s)...')
     
     #create target directory if necessary
     tarpath_step = tarpath + '/' + timestep + '/' + experiment + '/' + hemis
@@ -149,7 +149,10 @@ for mm in list(range(len(model))):
     #optionally get the lead-time from input file and check whether the file metadata is consistent which what is requested in this script (see lead_time input parameter above)
     if experiment == 'dcppA':
         lead_time_from_nc = dataset.lead_time
-        if lead_time_from_nc[0:2] != str(lead_time):
+        lead_time_from_nc = lead_time_from_nc[0:2].replace(' ','',) #replace has been placed to get rid of the empty space in case lead_time_from_nc = '1 ' 
+        if lead_time_from_nc == str(lead_time):
+            print('The lead-time retrieved from the file '+archivo+' corresponds to the lead-time requested by the user, i.e. '+str(lead_time)+' year(s)')
+        else:
             raise Exception('ERROR ! The lead-time stored in '+archivo+' is '+lead_time_from_nc+' and does not correspond to the lead-time requested by the user in the lead_time input parameter, which is '+str(lead_time))
 
     #operate in a grid box (resolution = tarres)

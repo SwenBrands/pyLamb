@@ -100,7 +100,7 @@ def get_ensemble_config(ensemble_f,experiment_f):
         raise Exception('ERROR: unknown entry for <ensemble_f> and/or <experiment_f> input parameters !')
     return(model_f,mrun_f,model_label_f,tarhours_f)
 
-def get_target_period(model_f,experiment_f,cmip_f=None):
+def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     '''returns the target period (taryears_f) and timestep (timestep_f) to be used in the analyses as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     if experiment_f == 'amip' and cmip_f == 5:
@@ -112,9 +112,10 @@ def get_target_period(model_f,experiment_f,cmip_f=None):
     elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
         taryears_f=[1979,2017]
         timestep_f = '6h'
-    elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1971-2028 for comparison of the historical+ssp245 runs with the dcppA runs
-        print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp runs to cover the 1979-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
-        taryears_f = [1971,2028]
+    elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1961-2028 for comparison of the historical+ssp245 runs with the dcppA runs
+        print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp245 runs to cover the 1961-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
+        #taryears_f = [1971,2028]
+        taryears_f = [1961,2028]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f in ('ec_earth3_veg','mpi_esm_1_2_hr'):
         taryears_f=[1850,2014]
@@ -140,9 +141,14 @@ def get_target_period(model_f,experiment_f,cmip_f=None):
     elif experiment_f == '20c':
         taryears_f=[1901,2010]
         timestep_f = '3h'
-    elif experiment_f == 'dcppA':
-        #taryears_f=[1970,2029]
-        taryears_f=[1971,2028]
+    elif experiment_f == 'dcppA' and lead_time_f == 10:
+        taryears_f=[1970,2028]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 5:
+        taryears_f=[1965,2023]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 1:
+        taryears_f=[1961,2019]
         timestep_f = '6h'
     else:
         raise Exception('Error: check entry for <experiment_f> !')
