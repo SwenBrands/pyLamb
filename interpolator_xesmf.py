@@ -129,16 +129,6 @@ for mm in list(range(len(model))):
     #get metadata for this GCM
     runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
     
-    # #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-    # if experiment == 'dcppA':
-        # print('Getting target period and time step for '+model[mm]+', '+experiment+', cmip'+str(cmip)+' and lead time '+str(lead_time))
-        # taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time)
-    # elif experiment in ('historical', '20c', 'amip', 'piControl', 'ssp245', 'ssp585'):
-        # print('Getting target period and time step for '+model[mm]+', '+experiment+' and cmip'+str(cmip))
-        # taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip)
-    # else:
-        # raise Excpetion('ERROR: unknown entry for <experiment> input parameter !')
-    
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     print('Getting target period and time step for '+model[mm]+', '+experiment+', cmip'+str(cmip)+' and lead time (currently only applies for dcppA experiment) '+str(lead_time)+' year(s)...')
     taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time) #within the function lead_time_f is currently only used if experiment = 'dcppA'

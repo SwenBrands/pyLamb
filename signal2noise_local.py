@@ -26,9 +26,9 @@ taryears_obs = [[1961,2010],[1965,2010],[1970,2010]] #list containing the start 
 taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 taryears_hist = [[1961,2019],[1965,2023],[1970,2028]]
 
-city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+#city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
 tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, 15 = purely directional west
@@ -42,6 +42,7 @@ meanperiod = 10 #running-mean period in years
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
 
 #visualization options
+axes_config = 'equal' # equal or individual; if set to equal, the axes limits are equal for all considered lead-times in a given city; if set to individual, the axes are optimized for each specific lead-time in that city
 plot_sig_stn_only = 'yes' #plot only significant signal-to-noise ratios in pcolor format, yes or no
 dpival = 300 #resolution of the output figure in dots per inch
 outformat = 'pdf' #png, pdf, etc.
@@ -65,7 +66,9 @@ if seaslabel == '123456789101112':
 wtnames = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN', 'PDNE', 'PDE', 'PDSE', 'PDS', 'PDSW', 'PDW', 'PDNW', 'PDN', 'PC', 'DCNE', 'DCE', 'DCSE', 'DCS', 'DCSW', 'DCW', 'DCNW', 'DCN', 'U']
 wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
 
-study_years = np.arange(np.array(taryears).min(),np.array(taryears).max()+1,1) #numpy array of years limited by the lower and upper end of considered years 
+study_years = np.arange(np.array(taryears).min(),np.array(taryears).max()+1,1) #numpy array of years limited by the lower and upper end of considered years
+t_startindex = int(meanperiod/2) #start index of the period to be plotted along the x axis
+t_endindex = int(len(study_years)-(meanperiod/2-1)) #end index of the period to be plotted along the x axis
 
 #init output arrays of the ensemble x city loop series
 #for 3d arrays ensemble x city x study_years
@@ -220,11 +223,25 @@ for lt in np.arange(len(lead_time)):
             if any(runstn > critval_stn): #if the signal is significant for any temporal mean value, then depict this with a marker
                 #runmeans[runstn > critval_stn].plot(linestyle='None',marker='o',markersize=6,color='orange',zorder=0) #plot significant ensemble mean values (signals)
                 plt.plot(years[runstn > critval_stn],min_occ[runstn > critval_stn],linestyle='None',marker='D',markersize=6,color='red') #plot significant ensemble mean values (signals)
+            
+            #set x axis configuration
             plt.xlabel('year')
-            plt.ylabel(ylabel_ts)    
-            plt.xticks(ticks=years[9::10],labels=years[9::10])
-            plt.xlim([years.min(),years.max()])
+            if axes_config == 'equal':
+                #set x axis configuration, the same range of years is plotted for each lead-time (or forecast year), considering the longest period without NaNs available from the joint data arrays of all considered lead-times
+                plt.xticks(ticks=study_years[t_startindex:t_endindex][9::10],labels=study_years[t_startindex:t_endindex][9::10])
+                plt.xlim([study_years[t_startindex:t_endindex].min(),study_years[t_startindex:t_endindex].max()])
+                #y limits correspond to the minimum and maximum value of the running-mean relative frequency of the requested LWT in the specific city
+                plt.ylim([runmeans_i.min().values,runmeans_i.max().values])
+            elif axes_config == 'individual':
+                #the range of the x-axis is optimized for each individual lead time
+                plt.xticks(ticks=years[9::10],labels=years[9::10])
+            else:
+                raise Exception('ERROR: check entry for <axes_config> input parameter !')
+            
+            #set y axis configuration
+            plt.ylabel(ylabel_ts)
             plt.ylim([wt_agg.min(),wt_agg.max()])
+            
             plt.title('LWT '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+' members '+str(start_year_step)+'-'+str(end_year_step))
             text_x = np.percentile(years,30) # x coordinate of text inlet
             text_y = wt_agg.values.max() - (wt_agg.values.max() - wt_agg.values.min())/25 # y coordinate of text inlet
@@ -301,6 +318,18 @@ for lt in np.arange(len(lead_time)):
             plt.plot(study_years,runmeans_all[en,cc,:].values,linewidth=2,color=ensemble_color[en],linestyle=ensemble_linestyle[en])
             plt.plot(study_years_mat,np.transpose(runmeans_i_all[en,:,cc,:].values),linewidth=0.5,color=ensemble_color[en],linestyle=ensemble_linestyle[en])
             #plt.plot(years_mat,np.transpose(runmeans_i.values),linewidth=1)
+        
+        #set x and y axis configuration
+        if axes_config == 'equal':
+            #the same range of years is plotted for each lead-time (or forecast year), considering the longest period without NaNs
+            plt.xticks(ticks=study_years[t_startindex:t_endindex][9::10],labels=study_years[t_startindex:t_endindex][9::10])
+            plt.xlim([study_years[t_startindex:t_endindex].min(),study_years[t_startindex:t_endindex].max()])
+            #y limits correspond to the minimum and maximum value of the running-mean relative frequency of the requested LWT in the specific city
+            plt.ylim([runmeans_i_all.sel(city=city[cc]).min().values,runmeans_i_all.sel(city=city[cc]).max().values])
+        elif axes_config == 'individual':
+            print('The x-axis in the time-series plot is optimized for lead-time = '+str(lead_time[lt])+' years.')
+        else:
+            raise Exception('ERROR: unknown entry for <axes_config> input parameter !')
         
         #plot corrleation coefficients in the titles
         rho1 = xr.corr(runmeans_all.sel(experiment='dcppA',city=city[cc]),runmeans_all.sel(experiment='historical',city=city[cc])) #calculate the correlation between the two running ensemble decadal mean time series
