@@ -59,6 +59,7 @@ anom = 'no' #not relevant here since yearly counts are considered, i.e. the annu
 #execute ###############################################################################################
 taryears = np.stack((taryears_obs,taryears_dcppa,taryears_hist))
 taryears = xr.DataArray(taryears,coords=[experiment,lead_time,np.arange(len(taryears_obs[0]))],dims=['experiment','lead_time','years'], name='temporal_coverage')
+ref_period = [taryears[:,:,0].max().values,taryears[:,:,1].min().values] #first and last year of the reference period common to all lead-times and experiments that is used for anomaly calculation below
 
 if aggreg != 'year': #check for correct usage of the script
     raise Exception("Bad call of the script: This script currently only works for yearly LWT counts, i.e. aggreg = 'year' !)")
@@ -92,9 +93,20 @@ for lt in np.arange(len(lead_time)):
         
         #get ensemble configuration as defined in analysis_functions,py, see get_ensemble_config() function therein
         model,mrun,model_label,tarhours = get_ensemble_config(ensemble[en],experiment[en])
-        #init 4d arrays ensemble x member x city x study_years
+        if experiment[en] == 'dcppA':
+            mrun_dcppA = mrun
+        elif experiment[en] == 'historical':
+            mrun_historical = mrun
+        elif experiment[en] == '20c':
+            mrun_20c = mrun
+        else:
+            raise Exception('ERROR: unknown entry for <experiment[en]> !')
+        
+        #init numpy arrays needing ensemble size in <mrun> variable
         if lt == 0 and en == 0:
             runmeans_i_all = np.zeros((len(lead_time),len(ensemble),len(mrun),len(city),len(study_years)))
+            wt_agg_tmean_all = np.zeros((len(lead_time),len(ensemble),len(mrun),len(city))) #temporal LWT frequency average for each lead-time, ensemble, run and city, calculated upon running average values
+        
         print('INFO: get annual and decadal mean time series as well as signal-to-noise ratios for '+aggreg+' LWT counts, '+ensemble[en]+' with '+str(len(mrun[en]))+' runs, '+str(tarmonths)+' months, '+str(taryears[en][lt])+' years, '+str(tarhours)+' hours. Output LWT frequency units are: '+yearly_units+'.')
         wt_agg = np.zeros((len(model),len(list(range(start_year_step,end_year_step+1)))))
         for cc in np.arange(len(city)):
@@ -187,25 +199,45 @@ for lt in np.arange(len(lead_time)):
             #get running mean of yearly ensemble mean counts; then calculate and plot the signal-to-noise ratio as well as its critival value
             years = wt_agg_step.year.values
             wt_agg = xr.DataArray(wt_agg,coords=[np.arange(wt_agg.shape[0]),years],dims=['member','time'],name='wtfreq')
-            means = wt_agg.mean(axis=0)
-            runmeans = means.rolling(time=meanperiod,center=True,min_periods=None).mean() # calculate running temporal mean values of the yearly ensemble mean values
-            runmeans_i = wt_agg.rolling(time=meanperiod,center=True,min_periods=None).mean() # calculate running temporal mean values for each member
-            runmeans_per_run =  np.tile(runmeans_i.mean(dim='time'),(len(years),1)).transpose() # calculate the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
-            #calculate anomalies w.r.t to global ensemble mean or member-wise temporal mean
-            if center_wrt == 'ensemble_mean':
-                runmeans_i_anom = runmeans_i - runmeans.mean() # calculate the running mean values for each individual model run minus the overall ensemble and temporal mean values (anomalies w.r.t. overall ensemble mean)
-            elif center_wrt == 'memberwise_mean':
-                runmeans_i_anom = runmeans_i - runmeans_per_run # calculate the running mean values for each individual model run minus the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
-            else:
-                raise Exception('ERROR: check entry for <center_wrt> input parameter !')
-
-            runsignal = runmeans_i_anom.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
-            runnoise = runmeans_i_anom.std(dim='member').rename('noise') #ensemble standard deviation for each temporal mean period
+            year_ind_anom = np.where((wt_agg.time >= ref_period[0]) & (wt_agg.time <= ref_period[1]))[0] #get indices of the years within the reference period
+            wt_agg_tmean = wt_agg.isel(time=year_ind_anom).mean(dim='time') #tmean = temporal mean for each member, calculated upon reference years only
+            np.tile(wt_agg_tmean,(len(years),1)).transpose()
+            if center_wrt == 'memberwise_mean':
+                anom_i = wt_agg - np.tile(wt_agg_tmean,(len(years),1)).transpose()
+            elif center_wrt == 'ensemble_mean':
+                anom_i = wt_agg - wt_agg_tmean.mean()
+            
+            #caclulate running mean anomalies and signal-to-noise ratios thereon
+            runanom_i = anom_i.rolling(time=meanperiod,center=True,min_periods=None).mean()
+            runsignal = runanom_i.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
+            runnoise = runanom_i.std(dim='member').rename('noise') #ensemble standard deviation for each temporal mean period
             runstn = np.abs(runsignal / runnoise).rename('signal-to-noise') #signal-to-noise ration for each temporal mean period
             critval_stn = runstn.copy() #get a new xarray data array from an existing one
             critval_stn[:] = 2 / np.sqrt(len(model)-1) #fill this new xarray data array with the critival value for a significant signal-to-noise ratio, as defined by the first equation in https://doi.org/10.1007/s00382-010-0977-x (Deser et al. 2012, Climate Dynamics)
+            
+            #caclulated raw / non transformed running LWT frequencies
+            means = wt_agg.mean(axis=0)
+            runmeans = means.rolling(time=meanperiod,center=True,min_periods=None).mean() # calculate running temporal mean values of the yearly ensemble mean values
+            runmeans_i = wt_agg.rolling(time=meanperiod,center=True,min_periods=None).mean() # calculate running temporal mean values for each member
+            
+            # mean_i =  np.tile(runmeans_i.mean(dim='time'),(len(years),1)).transpose() # calculate the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
+            # #calculate anomalies w.r.t to global ensemble mean or member-wise temporal mean
+            # if center_wrt == 'ensemble_mean':
+                # runmeans_i_anom = runmeans_i - runmeans.mean() # calculate the running mean values for each individual model run minus the overall ensemble and temporal mean values (anomalies w.r.t. overall ensemble mean)
+            # elif center_wrt == 'memberwise_mean':
+                # runmeans_i_anom = runmeans_i - mean_i # calculate the running mean values for each individual model run minus the member-wise temporal mean values (anomalies w.r.t member-wise temporal mean)
+            # else:
+                # raise Exception('ERROR: check entry for <center_wrt> input parameter !')
+
+            # runsignal = runmeans_i_anom.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
+            # runnoise = runmeans_i_anom.std(dim='member').rename('noise') #ensemble standard deviation for each temporal mean period
+            # runstn = np.abs(runsignal / runnoise).rename('signal-to-noise') #signal-to-noise ration for each temporal mean period
+            # critval_stn = runstn.copy() #get a new xarray data array from an existing one
+            # critval_stn[:] = 2 / np.sqrt(len(model)-1) #fill this new xarray data array with the critival value for a significant signal-to-noise ratio, as defined by the first equation in https://doi.org/10.1007/s00382-010-0977-x (Deser et al. 2012, Climate Dynamics)
+            
+            #plot signal-to-noise time series individually for each experiment and city, and compare with critical value
             min_occ = runstn.copy() #get a new xarray data array from an existing one
-            min_occ[:] = wt_agg.min().values #overall minimum yearly WT frequency of all runs, used for plotting purpose below
+            min_occ[:] = wt_agg.min().values #overall minimum yearly WT frequency of all runs, used for plotting purpose below            
             fig = plt.figure()
             critval_stn.plot()
             runstn.plot()
@@ -282,6 +314,8 @@ for lt in np.arange(len(lead_time)):
             noise_all[lt,en,cc,:] = nanseries_noise
             runmeans_all[lt,en,cc,:] = nanseries_runmeans
             runmeans_i_all[lt,en,:,cc,:] = nanseries_runmeans_i
+            wt_agg_tmean_all[lt,en,:,cc] = wt_agg_tmean
+            #assign mrun, will be overwritten in each loop through lead_time
 
 #convert output numpy arrays to xarray data array
 stn_all = xr.DataArray(stn_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='signal-to-noise')
@@ -289,18 +323,22 @@ signal_all = xr.DataArray(signal_all,coords=[lead_time,experiment,city,study_yea
 noise_all = xr.DataArray(noise_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='noise')
 runmeans_all = xr.DataArray(runmeans_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='running_ensemble_mean')
 runmeans_i_all = xr.DataArray(runmeans_i_all,coords=[lead_time,experiment,np.arange(len(mrun)),city,study_years],dims=['lead_time','experiment','member','city','time'],name='running_member_mean')
+wt_agg_tmean_all = xr.DataArray(wt_agg_tmean_all,coords=[lead_time,experiment,np.arange(len(mrun)),city],dims=['lead_time','experiment','member','city'],name='member_mean')
 stn_all.experiment.attrs['ensemble'] = ensemble
 signal_all.experiment.attrs['ensemble'] = ensemble
 noise_all.experiment.attrs['ensemble'] = ensemble
 runmeans_all.experiment.attrs['ensemble'] = ensemble
 runmeans_i_all.experiment.attrs['ensemble'] = ensemble
+wt_agg_tmean_all.experiment.attrs['ensemble'] = ensemble
 
 #for signal, noise and signal-to-noise ratios, the reanalysis is excluded, the focus is put on model experiments
-stn_all_model = stn_all.sel(experiment=['dcppA','historical'])
-noise_all_model = noise_all.sel(experiment=['dcppA','historical'])
-stn_model_max = stn_all_model.max().values #maximum signal-to-noise ratio across all model experiments and lead-times
-noise_model_min = noise_all_model.min().values
-noise_model_max = noise_all_model.max().values #currently not in use yet, maximum noise / standard deviation across all model experiments and lead-times
+stn_model = stn_all.sel(experiment=['dcppA','historical'])
+noise_model = noise_all.sel(experiment=['dcppA','historical'])
+wt_agg_tmean_model = wt_agg_tmean_all.sel(experiment=['dcppA','historical'])
+stn_model_max = stn_model.max().values #maximum signal-to-noise ratio across all model experiments and lead-times
+noise_model_min = noise_model.min().values
+noise_model_max = noise_model.max().values #currently not in use yet, maximum noise / standard deviation across all model experiments and lead-times
+
 #init output arrays
 rho1_all = np.zeros((len(lead_time),len(city)))
 rho2_all = np.copy(rho1_all)
@@ -383,26 +421,26 @@ for lt in np.arange(len(lead_time)):
     #plot signal-to-noise ratio separately for dcppA and historical    
     if plot_sig_stn_only == 'yes':
         print('WARNING: Only significant signal-to-noise ratios are plotted in pcolor format!')
-        stn_all_model = stn_all_model.where(stn_all_model > critval_stn[0])
+        stn_model = stn_model.where(stn_model > critval_stn[0])
     elif  plot_sig_stn_only == 'no':
-        stn_all_model_sig = stn_all_model.where(stn_all_model > critval_stn[0])
+        stn_model_sig = stn_model.where(stn_model > critval_stn[0])
     else:
-        raise Exception('ERROR: unknown entry for <stn_all_model_sig> input parameter !')
+        raise Exception('ERROR: unknown entry for <stn_model_sig> input parameter !')
 
-    for exp in stn_all_model.experiment.values:
+    for exp in stn_model.experiment.values:
         #get significant SNR for the given lead-time and experiment
-        stn_all_model_sig_step = stn_all_model_sig.sel(lead_time=lead_time[lt],experiment=exp)
+        stn_model_sig_step = stn_model_sig.sel(lead_time=lead_time[lt],experiment=exp)
         fig = plt.figure()
-        stn_all_model.sel(lead_time=lead_time[lt], experiment=exp).plot(vmin=0,vmax=stn_model_max,edgecolors='k') #plots a pcolor of the differences in the signal-to-noise ratios along the time axis (10-yr running differences)
+        stn_model.sel(lead_time=lead_time[lt], experiment=exp).plot(vmin=0,vmax=stn_model_max,edgecolors='k') #plots a pcolor of the differences in the signal-to-noise ratios along the time axis (10-yr running differences)
         
         if plot_sig_stn_only == 'no':
             #loop through the (city x time period) matrix and mark those running time periods where the signal-to-noise ratio is significant with a dot 
-            city_pos = np.arange(len(stn_all_model_sig_step.city)) #auxiliary variable used to find the y - coordinate of the city in the pcolor plotted below
-            for ii in np.arange(stn_all_model_sig_step.shape[0]):
-                for jj in np.arange(stn_all_model_sig_step.shape[1]):
-                    if ~np.isnan(stn_all_model_sig_step[ii,jj]):
-                        plt.plot(stn_all_model_sig_step.time[jj],stn_all_model_sig_step.city[ii],linestyle='none',color='red',marker = 'o', markersize=4)
-                        #plt.plot(stn_all_model_sig_step.time[jj].values,city_pos[ii],linestyle='none',color='red',marker = 'o', markersize=4)
+            city_pos = np.arange(len(stn_model_sig_step.city)) #auxiliary variable used to find the y - coordinate of the city in the pcolor plotted below
+            for ii in np.arange(stn_model_sig_step.shape[0]):
+                for jj in np.arange(stn_model_sig_step.shape[1]):
+                    if ~np.isnan(stn_model_sig_step[ii,jj]):
+                        plt.plot(stn_model_sig_step.time[jj],stn_model_sig_step.city[ii],linestyle='none',color='red',marker = 'o', markersize=4)
+                        #plt.plot(stn_model_sig_step.time[jj].values,city_pos[ii],linestyle='none',color='red',marker = 'o', markersize=4)
         
         #xlim2pcolor = [study_years[~np.isnan(stn_diff[0,:])][0]-0.5,study_years[~np.isnan(stn_diff[0,:])][-1]+0.5]    
         #plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
@@ -452,8 +490,59 @@ for lt in np.arange(len(lead_time)):
     plt.xlim([study_years[t_startindex:t_endindex].min()-0.5,study_years[t_startindex:t_endindex].max()+0.5])
     plt.ylim(-0.5,len(city)-0.5)
     plt.title(wtlabel.replace(" ","_")+', historical paired with dcppa FY'+str(lead_time[lt]) + ' standard deviation')
+    #plt.gca().set_aspect('equal')
     savename_dcppa_noise = figs+'/'+model[mm]+'/pcolor_std_historical_paired_with_FY'+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
     plt.savefig(savename_dcppa_noise,dpi=dpival)
+    plt.close('all')
+    del(fig)
+    
+#Pcolor, temporal mean values for all members and forecast years of the dcppA experiment as well as of the respective period from the historical experiment, one pcolor per city
+#concat dcppa and hist experiments
+wt_agg_tmean_concat = xr.concat([wt_agg_tmean_all.sel(experiment='dcppA'), wt_agg_tmean_all.sel(experiment='historical')],dim='lead_time')
+wt_agg_tmean_concat.lead_time.values[:] = np.arange(len(wt_agg_tmean_concat.lead_time)) ##modify lead-time dimension to increase monotonically
+wt_agg_tmean_std = wt_agg_tmean_concat.std(dim='member') #calculates standard deviation of the memberwise mean values for dcppa and hist in all cities
+for cc in np.arange(len(city)):
+    minval_tmean = wt_agg_tmean_model.sel(city=city[cc]).min().values
+    maxval_tmean = wt_agg_tmean_model.sel(city=city[cc]).max().values
+    
+    #dcppA
+    fig = plt.figure()
+    wt_agg_tmean_all.sel(experiment='dcppA', city=city[cc]).plot(vmin=minval_tmean,vmax=maxval_tmean)
+    plt.yticks(ticks = wt_agg_tmean_model.lead_time)
+    plt.xticks(wt_agg_tmean_model.member.values, labels = mrun_dcppA,size=6,rotation=45)
+    plt.xlabel('')
+    plt.title(wtlabel.replace(" ","_")+', dcppA FY'+str(lead_time[lt]) + ' temporal mean')
+    savename_dcppa_tmean = figs+'/'+model[mm]+'/pcolor_tmean_dcppa_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+    plt.savefig(savename_dcppa_tmean,dpi=dpival)
+    plt.close('all')
+    del(fig)
+    
+    #historical
+    fig = plt.figure()
+    wt_agg_tmean_all.sel(experiment='historical', city=city[cc]).plot(vmin=minval_tmean,vmax=maxval_tmean)
+    plt.yticks(ticks = wt_agg_tmean_model.lead_time)
+    plt.xticks(wt_agg_tmean_model.member.values, labels = mrun_historical,size=6,rotation=45)
+    plt.xlabel('')
+    plt.title(wtlabel.replace(" ","_")+', dcppA FY'+str(lead_time[lt]) + ' temporal mean')
+    savename_dcppa_tmean = figs+'/'+model[mm]+'/pcolor_tmean_historical_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+    plt.savefig(savename_dcppa_tmean,dpi=dpival)
+    plt.close('all')
+    del(fig)
+    
+    #concat
+    fig = plt.figure()
+    wt_agg_tmean_concat.sel(city=city[cc]).plot(vmin=minval_tmean,vmax=maxval_tmean)
+    std_step = wt_agg_tmean_std.sel(city=city[cc])
+    yticks_tmean = wt_agg_tmean_concat.lead_time[0:len(lead_time)+1]
+    ylabels_fy = list(wt_agg_tmean_all.sel(experiment='dcppA').lead_time.values.astype(str))+['hist']
+    #ylabels_tmean = list(wt_agg_tmean_all.sel(experiment='dcppA').lead_time.values.astype(str))+['hist']
+    ylabels_tmean = [ylabels_fy[ii]+' '+str(std_step[ii].round(2).values)[1:] for ii in np.arange(len(ylabels_fy))] #implicit loop to construct ylabels plus standard deviation of the temporal mean values from the individual members
+    plt.yticks(ticks = yticks_tmean, labels = ylabels_tmean)
+    plt.ylim(yticks_tmean[0]-0.5,yticks_tmean[-1]+0.5)
+    plt.ylabel('forecast year and std of the mean')
+    plt.title(wtlabel.replace(" ","_")+' in '+city[cc]+', dcppA plus hist, member-wise clim. mean freq.')
+    savename_concat_tmean = figs+'/'+model[mm]+'/pcolor_tmean_concat_dcppa_historical_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[1])+'.'+outformat
+    plt.savefig(savename_concat_tmean,dpi=dpival)
     plt.close('all')
     del(fig)
 
