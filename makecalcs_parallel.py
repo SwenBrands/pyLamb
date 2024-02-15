@@ -36,13 +36,17 @@ n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/paral
 experiment = 'historical' #historical, 20c, amip, ssp245, ssp585, piControl or dcppA
 home = os.getenv('HOME')
 filesystem = 'lustre'
-hemis = 'nh' #sh or nh
+hemis = 'sh' #sh or nh
 saveindices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
 lead_time = 1 #lead time in years, currently only used for dcppA experiments
 
-# historical runs extended with ssp245 to compare with dcppA runs below
-model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# ERA5
+model = ['era5']
+mrun =  ['r1i1p1']
+
+# # historical runs extended with ssp245 to compare with dcppA runs below
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 
 # # dcppA runs
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']

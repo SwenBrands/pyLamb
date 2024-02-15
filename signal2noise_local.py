@@ -17,17 +17,23 @@ exec(open('analysis_functions.py').read())
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameter
-ensemble = ['cera20c','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-ensemble_color = ['black','grey','blue']
-ensemble_linestyle = ['dashed','solid','dotted']
-experiment = ['20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
+ensemble = ['era5','cera20c','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+ensemble_color = ['orange','black','grey','blue']
+ensemble_linestyle = ['dashed','dashed','solid','dotted']
+experiment = ['20c','20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
 #lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
 lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
 
+## this is the configuration for use without ERA5
 # taryears_obs = [[1961,2010],[1965,2010],[1970,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 # taryears_hist = [[1961,2019],[1965,2023],[1970,2028]]
 # taryears_obs = [[1901,2010],[1901,2010],[1901,2010]]
-taryears_obs = [[1961,2010],[1961,2010],[1961,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+
+## this is the configuration for use with ERA5
+#taryears_obs1 = [[1940,2022],[1940,2022],[1940,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears_obs1 = [[1961,2022],[1961,2022],[1961,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears_obs2 = [[1961,2010],[1961,2010],[1961,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+#taryears_obs2 = [[1901,2010],[1901,2010],[1901,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 taryears_hist = [[1961,2028],[1961,2028],[1961,2028]]
 taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 
@@ -36,7 +42,7 @@ city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','
 #city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
-tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, 15 = purely directional west
+tarwts = [15] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, 15 = purely directional west
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #base path to the output figures
@@ -60,9 +66,12 @@ edgecolor = None
 aggreg = 'year' #unlike map_lowfreq_var.py, this script currently only works for aggreg = 'year', other aggregation levels will be implemented in the future
 anom = 'no' #not relevant here since yearly counts are considered, i.e. the annual cycle is not present in the time series, is kept for future versions of the script
 
-#execute ###############################################################################################
-taryears = np.stack((taryears_obs,taryears_dcppa,taryears_hist))
-taryears = xr.DataArray(taryears,coords=[experiment,lead_time,np.arange(len(taryears_obs[0]))],dims=['experiment','lead_time','years'], name='temporal_coverage')
+##execute ###############################################################################################
+#taryears = np.stack((taryears_obs,taryears_dcppa,taryears_hist))
+#taryears = xr.DataArray(taryears,coords=[experiment,lead_time,np.arange(len(taryears_obs[0]))],dims=['experiment','lead_time','years'], name='temporal_coverage')
+
+taryears = np.stack((taryears_obs1,taryears_obs2,taryears_dcppa,taryears_hist))
+taryears = xr.DataArray(taryears,coords=[experiment,lead_time,np.arange(len(taryears_obs1[0]))],dims=['experiment','lead_time','years'], name='temporal_coverage')
 ref_period = [taryears[:,:,0].max().values,taryears[:,:,1].min().values] #first and last year of the reference period common to all lead-times and experiments that is used for anomaly calculation below
 
 if aggreg != 'year': #check for correct usage of the script
@@ -339,9 +348,13 @@ runmeans_i_all.experiment.attrs['ensemble'] = ensemble
 wt_agg_tmean_all.experiment.attrs['ensemble'] = ensemble
 
 #for signal, noise and signal-to-noise ratios, the reanalysis is excluded, the focus is put on model experiments
-stn_model = stn_all.sel(experiment=['dcppA','historical'])
-noise_model = noise_all.sel(experiment=['dcppA','historical'])
-wt_agg_tmean_model = wt_agg_tmean_all.sel(experiment=['dcppA','historical'])
+#stn_model = stn_all.sel(experiment=['dcppA','historical']) #does not work if experiment name occurs more than once in the array (e.g. '20c')
+#noise_model = noise_all.sel(experiment=['dcppA','historical'])
+#wt_agg_tmean_model = wt_agg_tmean_all.sel(experiment=['dcppA','historical'])
+stn_model = stn_all.isel(experiment = np.isin(stn_all.experiment,['dcppA','historical']))
+noise_model = noise_all.isel(experiment = np.isin(noise_all.experiment,['dcppA','historical']))
+wt_agg_tmean_model = wt_agg_tmean_all.isel(experiment = np.isin(wt_agg_tmean_all.experiment,['dcppA','historical']))
+
 stn_model_max = stn_model.max().values #maximum signal-to-noise ratio across all model experiments and lead-times
 noise_model_min = noise_model.min().values
 noise_model_max = noise_model.max().values #currently not in use yet, maximum noise / standard deviation across all model experiments and lead-times

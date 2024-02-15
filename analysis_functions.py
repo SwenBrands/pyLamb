@@ -58,7 +58,12 @@ def get_ensemble_config(ensemble_f,experiment_f):
         model_f = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
         mrun_f = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
         model_label_f = 'CERA-20C'
-        tarhours_f = [0,6,12,18]
+        tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
+    elif ensemble_f == 'era5' and experiment_f == '20c':
+        model_f = ['era5','era5','era5','era5','era5','era5','era5','era5','era5','era5']
+        mrun_f = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
+        model_label_f = 'ERA5'
+        tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
     elif ensemble_f == 'mpi_esm_1_2_hr' and experiment_f == 'historical':
         model_f = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
         mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
@@ -105,7 +110,7 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     if experiment_f == 'amip' and cmip_f == 5:
         taryears_f=[1979,2005]
-        timestep_f = '6h'
+        timestep_f = '6h' #time step of the SLP data within the nc file from ESGF
     elif experiment_f == 'amip' and cmip_f == 6 and model_f not in ('ec_earth3'):
         taryears_f=[1979,2014]
         timestep_f = '6h'
@@ -130,16 +135,20 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
         taryears_f=[1979,2005]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f == 'era5' and cmip_f == 1:
-        taryears_f=[1979,2022]
-        timestep_f = '6h'
+        taryears_f=[1940,2022]
+        #timestep_f = '6h'
+        timestep_f = '3h'
     elif experiment_f in ('ssp126','ssp245','ssp370','ssp585'):
         taryears_f=[2015,2100]
         timestep_f = '6h'
     elif experiment_f == 'piControl' and model_f == 'mpi_esm_1_2_lr':
         taryears_f=[1850,2261] #the max and min years are limited in pandas, see https://calmcode.io/til/pandas-timerange.html
         timestep_f = '6h'
-    elif experiment_f == '20c':
+    elif experiment_f == '20c' and model_f == 'cera20c':
         taryears_f=[1901,2010]
+        timestep_f = '3h'
+    elif experiment_f == '20c' and model_f == 'era5':
+        taryears_f=[1940,2022]
         timestep_f = '3h'
     elif experiment_f == 'dcppA' and lead_time_f == 10:
         taryears_f=[1970,2028]

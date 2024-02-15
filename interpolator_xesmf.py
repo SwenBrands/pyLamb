@@ -41,15 +41,21 @@ experiment = 'historical' #historical, 20c, amip, piControl, ssp245, ssp585, dcp
 lead_time = 10 #lead time in years, only applied if experiment = 'dcppA'
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
-hemis = 'nh'
+hemis = 'sh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
 # historical runs extended with ssp245
-model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
-mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
-mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+model = ['era5']
+model_label = ['ERA5'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+mrun = ['r1i1p1']
+mycalendar = ['gregorian']
+
+# # historical runs extended with ssp245
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
 # # dcppA runs
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -104,15 +110,20 @@ if filesystem == 'extdisk': #for external hard disk
     root1 = '/media/swen/ext_disk2/datos/GCMData/'
     savedir1 = root1
     rundir = home+'/datos/tareas/lamb_cmip5/pyLamb'
-elif (filesystem == 'lustre') & (experiment != 'dcppA'): #for filesystems at MeteoGalicia mounted by Sergio
+elif (filesystem == 'lustre') & (experiment != 'dcppA') & (~np.isin('era5',model)): #for filesystems at MeteoGalicia mounted by Sergio
     root1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     savedir1 = root1
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
-elif (filesystem == 'lustre') & (experiment == 'dcppA'):
+elif (filesystem == 'lustre') & (experiment == 'dcppA') & (~np.isin('era5',model)):
     #root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_LT'+str(lead_time)
     root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_FY'+str(lead_time)
     savedir1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
+elif (filesystem == 'lustre') & (experiment == 'historical') & (len(model) == 1) & (model[0] == 'era5'):
+    root1 = '/lustre/gmeteo/WORK/DATA/C3S-CDS/ERA5/3h/msl'
+    savedir1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
+    rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
+    print('WARNING: The script will run in exceptional mode in order to process ERA5 data located in '+root1+'. In this model, len(model) = 1, i.e. only ERA5 data will be processed.')
 else:
     raise Exception('ERROR: unknown entry for <filesystem>!')
 os.chdir(rundir)
@@ -143,22 +154,22 @@ for mm in list(range(len(model))):
         latname = 'latitude' #'latitude'
         lonname = 'longitude' #'longitude'
         varname = 'msl'
-        timestep = '6h'
+        #timestep = '3h' #is now defined in get_target_period() function
     elif model[mm] == 'ec_earth3' and mrun[mm] == 'r2i1p1f1' and experiment != 'dcppA':
         latname = 'latitude'
         lonname = 'longitude'
         varname = 'psl'
-        timestep = '6h'
+        #timestep = '6h' #is now defined in get_target_period() function
     elif model[mm] == 'cera20c':
         latname = 'latitude' #'latitude'
         lonname = 'longitude' #'longitude'
         varname = 'msl'
-        timestep = '3h'
+        #timestep = '3h' #is now defined in get_target_period() function
     else:
         latname = 'lat'
         lonname = 'lon'
         varname = 'psl'
-        timestep = '6h'
+        #timestep = '6h' #is now defined in get_target_period() function
     
     root2 = '/'+timestep+'/'+experiment+'/'#second part of root to source nc files
     
@@ -195,6 +206,8 @@ for mm in list(range(len(model))):
     #generate a list of nc files in source directory containing the GCM data
     if experiment == 'dcppA' and filesystem == 'lustre':
         listdir_raw = os.listdir(root1)
+    elif experiment == 'historical' and len(model) == 1 and model[0] == 'era5':
+        listdir_raw = os.listdir(root1)
     else:
         listdir_raw = os.listdir(root1 + model[mm] + root2 + mrun[mm])
     dropind = []
@@ -226,6 +239,8 @@ for mm in list(range(len(model))):
         #construct full path to the file as a function of the experiment. Note that the directory structure for the dcppa experiment is different from that of the other experiments
         if experiment == 'dcppA':
             fullpath = root1+'/'+infile
+        elif experiment == 'historical' and len(model) == 1 and model[0] == 'era5':
+            fullpath = root1+'/'+infile            
         else:
             fullpath = root1 + model[mm] + root2 + mrun[mm]+'/'+infile
         print('INFO: loading dataset '+fullpath)
