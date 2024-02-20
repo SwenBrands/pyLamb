@@ -21,7 +21,7 @@ ensemble = ['era5','cera20c','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr
 ensemble_color = ['orange','black','grey','blue']
 ensemble_linestyle = ['dashed','dashed','solid','dotted']
 experiment = ['20c','20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
-#lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
+experiment_out = ['20c_era5','20c_cera20c','dcppA','historical'] #used to distinct several 20c experiments in the xr data array created by this script. Is important when calculating correlations.
 lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
 
 ## this is the configuration for use without ERA5
@@ -37,8 +37,8 @@ taryears_obs2 = [[1961,2010],[1961,2010],[1961,2010]] #list containing the start
 taryears_hist = [[1961,2028],[1961,2028],[1961,2028]]
 taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 
-city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+#city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
@@ -49,6 +49,7 @@ figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #base path to the
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
 meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
+rho_ref = '20c_era5' #20c_era5 or 20c_cera20c; reference observational dataset used to calculate correlations. Must be included in the <experiment_out> input parameter defined above
 
 #options used for periodgram, experimental so far, see https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
@@ -334,12 +335,12 @@ for lt in np.arange(len(lead_time)):
             #assign mrun, will be overwritten in each loop through lead_time
 
 #convert output numpy arrays to xarray data array
-stn_all = xr.DataArray(stn_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='signal-to-noise')
-signal_all = xr.DataArray(signal_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='signal')
-noise_all = xr.DataArray(noise_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='noise')
-runmeans_all = xr.DataArray(runmeans_all,coords=[lead_time,experiment,city,study_years],dims=['lead_time','experiment','city','time'],name='running_ensemble_mean')
-runmeans_i_all = xr.DataArray(runmeans_i_all,coords=[lead_time,experiment,np.arange(len(mrun)),city,study_years],dims=['lead_time','experiment','member','city','time'],name='running_member_mean')
-wt_agg_tmean_all = xr.DataArray(wt_agg_tmean_all,coords=[lead_time,experiment,np.arange(len(mrun)),city],dims=['lead_time','experiment','member','city'],name='member_mean')
+stn_all = xr.DataArray(stn_all,coords=[lead_time,experiment_out,city,study_years],dims=['lead_time','experiment','city','time'],name='signal-to-noise')
+signal_all = xr.DataArray(signal_all,coords=[lead_time,experiment_out,city,study_years],dims=['lead_time','experiment','city','time'],name='signal')
+noise_all = xr.DataArray(noise_all,coords=[lead_time,experiment_out,city,study_years],dims=['lead_time','experiment','city','time'],name='noise')
+runmeans_all = xr.DataArray(runmeans_all,coords=[lead_time,experiment_out,city,study_years],dims=['lead_time','experiment','city','time'],name='running_ensemble_mean')
+runmeans_i_all = xr.DataArray(runmeans_i_all,coords=[lead_time,experiment_out,np.arange(len(mrun)),city,study_years],dims=['lead_time','experiment','member','city','time'],name='running_member_mean')
+wt_agg_tmean_all = xr.DataArray(wt_agg_tmean_all,coords=[lead_time,experiment_out,np.arange(len(mrun)),city],dims=['lead_time','experiment','member','city'],name='member_mean')
 stn_all.experiment.attrs['ensemble'] = ensemble
 signal_all.experiment.attrs['ensemble'] = ensemble
 noise_all.experiment.attrs['ensemble'] = ensemble
@@ -371,11 +372,11 @@ for lt in np.arange(len(lead_time)):
     for cc in np.arange(len(city)):
         fig = plt.figure()
         plt.plot(stn_all.time.values,critvals_study_period)
-        for exp in np.arange(len(experiment)):
-            stn_all.sel(lead_time=lead_time[lt],experiment=experiment[exp],city=city[cc]).plot()
+        for exp in np.arange(len(experiment_out)):
+            stn_all.sel(lead_time=lead_time[lt],experiment=experiment_out[exp],city=city[cc]).plot()
         plt.ylim(0,stn_all.max().values)
         plt.title(wtlabel.replace(" ","_")+'_FY'+str(lead_time[lt])+', '+city[cc]+', '+str(ensemble[0])+', '+str(len(mrun))+' members each')
-        plt.legend(['critval']+experiment)
+        plt.legend(['critval']+experiment_out)
         #savename_stn_city = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         savename_stn_city = comparison_dir+'/stn_stdcritval'+str(std_critval)+'_timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.savefig(savename_stn_city,dpi=dpival)
@@ -408,8 +409,8 @@ for lt in np.arange(len(lead_time)):
         
         #plot corrleation coefficients in the titles
         rho1 = xr.corr(runmeans_all.sel(lead_time=lead_time[lt],experiment='dcppA',city=city[cc]),runmeans_all.sel(lead_time=lead_time[lt],experiment='historical',city=city[cc])) #calculate the correlation between the two running ensemble decadal mean time series
-        rho2 = xr.corr(runmeans_all.sel(lead_time=lead_time[lt],experiment='dcppA',city=city[cc]),runmeans_all.sel(lead_time=lead_time[lt],experiment='20c',city=city[cc]))
-        rho3 = xr.corr(runmeans_all.sel(lead_time=lead_time[lt],experiment='historical',city=city[cc]),runmeans_all.sel(lead_time=lead_time[lt],experiment='20c',city=city[cc]))
+        rho2 = xr.corr(runmeans_all.sel(lead_time=lead_time[lt],experiment='dcppA',city=city[cc]),runmeans_all.sel(lead_time=lead_time[lt],experiment=rho_ref,city=city[cc]))
+        rho3 = xr.corr(runmeans_all.sel(lead_time=lead_time[lt],experiment='historical',city=city[cc]),runmeans_all.sel(lead_time=lead_time[lt],experiment=rho_ref,city=city[cc]))
         rho1_all[lt,cc] = rho1
         rho2_all[lt,cc] = rho2
         rho3_all[lt,cc] = rho3
