@@ -1995,6 +1995,23 @@ def get_historical_metadata(model):
         lev_oc_f = np.nan
         ecs_f = np.nan
         tcr_f = np.nan
+    elif model == 'cera20c':
+        fullname_f = 'CERA-20C'
+        mrun_f = 'r1i1p1'
+        family_f = 'reanalysis'
+        cmip_f = 1 #this is a fake score in order to be able to work with reanlaysis datasets as if they were GCMs in analysis_hist.py
+        complex_f = '1000000000' #this is a fake score in order to be able to work with reanlaysis datasets as if they were GCMs in analysis_hist.py
+        contact_f = 'ECMWF'
+        rgb_f = 'yellow'
+        marker_f = '$CERA-20C$'
+        latres_atm_f = np.nan
+        lonres_atm_f = np.nan
+        lev_atm_f = np.nan
+        latres_oc_f = np.nan
+        lonres_oc_f = np.nan
+        lev_oc_f = np.nan
+        ecs_f = np.nan
+        tcr_f = np.nan
     else:
         raise Exception('Error: check entry for <model> !!')
     

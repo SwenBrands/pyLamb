@@ -12,17 +12,21 @@ import cartopy.crs as ccrs
 from matplotlib import pyplot as plt
 import os
 import time
+import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 
 #set input parameters
-region1 = 'iberia' #region 1 as defined in analysis_functions.py
-region2 = 'north_atlantic' #region 2 as defined in analysis_functions.py
+region1 = 'nh' #region 1 as defined in analysis_functions.py
+region2 = 'sh' #region 2 as defined in analysis_functions.py
 tarwts_various = [[1],[18],[7,15,24]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
-tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
+# tarwts_various = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #loop through various seasons for exploratory data analysis
+# tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
 taryears = [1950,2010] #start and end yeartaryears = [1979,2005] #start and end year
-aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
-fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs/regional' #path to the output figures
+aggreg = '10' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
+fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
 wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
+ensemble_label = 'CERA-20C' #used for plotting purpose only
 model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
 mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
 #model = ['cera20c','cera20c']
@@ -38,7 +42,7 @@ rollw = 21 #rolling window in days used to calculate the climatological mean whi
 
 #options used for periodgram, experimental so far
 fs = 1 #sampling frequency used for calcluating power and cross-power spectra; is applied on temporally aggregated values as defined by <aggreg> above
-nfft_quotient = None #integer setting the quotient or None for default options, this is the fraction of the time series used as lenght of the FFT, 4 is recommended by Schönwiese 2006; if set to None, the default nfft option is used in signal.periodgram(). This option is not used in signal.csd() which always assumes None / default options 
+nfft_quotient = 10 #integer setting the quotient or None for default options, this is the fraction of the time series used as lenght of the FFT, 4 is recommended by Schönwiese 2006; if set to None, the default nfft option is used in signal.periodgram(). This option is not used in signal.csd() which always assumes None / default options 
 scaling = 'spectrum'
 detrend = 'constant' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 window = 'hamming' #hamming or hann
@@ -74,6 +78,7 @@ elif region2 in ('sh'):
     hemis2 = 'sh'
 
 for tarwts in tarwts_various:
+    wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","").replace(" ","_")
     for tarmonths in tarmonths_various:
         seaslabel = str(tarmonths).replace('[','').replace(']','').replace(', ','') #needed to plot and save the figures
         yearly_an = np.all(np.isin(ref_tarmonths,tarmonths)) #check whether yearly analysis will be hereafter applied or not
@@ -83,7 +88,18 @@ for tarwts in tarwts_various:
             print('INFO: Seasonal-specific time series were requested by the user and script will be run in reduced mode, i.e. the seasonal cycle is not plotted.')
         for j in list(range(len(model))): 
             print('INFO: loading '+model[j]+', '+mrun[j]+'...')
-            figs = fig_root+'/'+model[j] #complete the path to the output figures
+            #complete the path to the output figures
+            periodogram_dir = fig_root+'/'+model[j]+'/'+experiment+'/regional/'+aggreg+'/periodogram/'+wtlabel
+            timeseries_dir = fig_root+'/'+model[j]+'/'+experiment+'/regional/'+aggreg+'/timeseries/'+wtlabel
+            seascyc_dir = fig_root+'/'+model[j]+'/'+experiment+'/regional/'+aggreg+'/seascyc/'+wtlabel
+            #create target directory if missing
+            if os.path.isdir(periodogram_dir) != True:
+                os.makedirs(periodogram_dir)
+            if os.path.isdir(timeseries_dir) != True:
+                os.makedirs(timeseries_dir)
+            if os.path.isdir(seascyc_dir) != True:
+                os.makedirs(seascyc_dir)
+                
             if model[j] == 'cera20c':
                 timestep = '3h'
                 file_startyear = '1901'
@@ -157,10 +173,21 @@ for tarwts in tarwts_various:
             ci_cross = np.percentile(Pxx_cross_rand,ci_percentiles,axis=0)
 
             #plot the loopwise results, spectograms first
-            plot_power_spectrum('single',f_reg1_step,Pxx_reg1_step,ci_reg1,fs,window,nfft,detrend,anom,wtnames,tarwts,model[j],mrun[j],taryears,seaslabel,aggreg,region1,outformat,dpival,titlesize)
-            plot_power_spectrum('single',f_reg2_step,Pxx_reg2_step,ci_reg2,fs,window,nfft,detrend,anom,wtnames,tarwts,model[j],mrun[j],taryears,seaslabel,aggreg,region2,outformat,dpival,titlesize)
-            plot_power_spectrum('cross',f_cross_step,Pxx_cross_step,ci_cross,fs,window,nfft_csd,detrend,anom,wtnames,tarwts,model[j],mrun[j],taryears,seaslabel,aggreg,region1+region2,outformat,dpival,titlesize)
+            #savename = periodogram_dir+'/'+model[mm]+'_'+str(len(mrun))+'_members_periodogram_LWT_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
+            #plot_power_spectrum('single',f,Pxx,ci,fs,window,nfft,detrend,anom,wtnames,tarwts,model[0],'10',taryears,seaslabel,aggreg,city,outformat,dpival,titlesize)
+
+            savename = periodogram_dir+'/periodogram_'+model[j]+'_'+mrun[j]+'_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+region1+'.'+outformat
+            titlelabel = 'PS '+wtlabel+' '+model[j].upper()+' '+mrun[j]+' '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom+' '+region1
+            plot_power_spectrum('single',f_reg1_step,Pxx_reg1_step,ci_reg1,fs,window,nfft,detrend,aggreg,savename,titlelabel,dpival,titlesize)
+           
+            savename = periodogram_dir+'/periodogram_'+model[j]+'_'+mrun[j]+'_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+region2+'.'+outformat
+            titlelabel = 'PS '+wtlabel+' '+model[j].upper()+' '+mrun[j]+' '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom+' '+region2
+            plot_power_spectrum('single',f_reg2_step,Pxx_reg2_step,ci_reg2,fs,window,nfft,detrend,aggreg,savename,titlelabel,dpival,titlesize)
             
+            savename = periodogram_dir+'/cross_spectrum_'+model[j]+'_'+mrun[j]+'_'+wtlabel+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+region1+'_'+region2+'.'+outformat
+            titlelabel = 'CPS '+wtlabel+' '+model[j].upper()+' '+mrun[j]+' '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom+' '+region1+' '+region2
+            plot_power_spectrum('cross',f_cross_step,Pxx_cross_step,ci_cross,fs,window,nfft_csd,detrend,aggreg,savename,titlelabel,dpival,titlesize)
+
             #then get the seasonal cycle of the aggregated data and plot
             if aggreg != 'year' and anom == 'yes':
                 # seas_cyc_1_step =  wt_ag_reg1_step.groupby("time.month").mean("time")
@@ -213,11 +240,19 @@ for tarwts in tarwts_various:
         means_reg1reg2 =  np.mean(wt_ag_reg1reg2,axis=0)
         runmeans_reg1reg2 = np.convolve(means_reg1reg2, np.ones(meanperiod)/meanperiod, mode='valid')
 
-        #plot the time series for the temporally aggregated time instances
-        plot_time_series(wt_ag_reg1,detrend,anom,wtnames,tarwts,model[j],str(len(mrun)),taryears,seaslabel,aggreg,region1,outformat,dpival,titlesize,cutoff,meanperiod)
-        plot_time_series(wt_ag_reg2,detrend,anom,wtnames,tarwts,model[j],str(len(mrun)),taryears,seaslabel,aggreg,region2,outformat,dpival,titlesize,cutoff,meanperiod)
-        plot_time_series(wt_ag_reg1reg2,detrend,anom,wtnames,tarwts,model[j],str(len(mrun)),taryears,seaslabel,aggreg,region1+region2,outformat,dpival,titlesize,cutoff,meanperiod)
-
+        ##plot the time series for the temporally aggregated time instances in region 1 and 2, and the sum thereof
+        titlelabel = wtlabel+' '+model[j].upper()+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtrend '+detrend+' anom '+anom+' '+region1
+        savename = timeseries_dir+'/timeseries_'+ensemble_label+'_'+str(len(mrun))+'m_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtrend_'+detrend+'_anom_'+anom+'_'+region1+'.'+outformat
+        plot_time_series(wt_ag_reg1,detrend,aggreg,savename,titlelabel,dpival,titlesize=titlesize)
+        
+        titlelabel = wtlabel+' '+model[j].upper()+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtrend '+detrend+' anom '+anom+' '+region2
+        savename = timeseries_dir+'/timeseries_'+ensemble_label+'_'+str(len(mrun))+'m_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtrend_'+detrend+'_anom_'+anom+'_'+region2+'.'+outformat
+        plot_time_series(wt_ag_reg2,detrend,aggreg,savename,titlelabel,dpival,titlesize=titlesize)
+        
+        titlelabel = wtlabel+' '+ensemble_label+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtrend '+detrend+' anom '+anom+' '+region1+region2
+        savename = timeseries_dir+'/timeseries_'+ensemble_label+'_'+str(len(mrun))+'m_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtrend_'+detrend+'_anom_'+anom+'_'+region1+region2+'.'+outformat
+        plot_time_series(wt_ag_reg1reg2,detrend,aggreg,savename,titlelabel,dpival,titlesize=titlesize)
+        
         #plot the seasonal cycles of the two target regions
         if aggreg != 'year' and anom == 'yes' and yearly_an:
             fig = plt.figure()
@@ -225,9 +260,9 @@ for tarwts in tarwts_various:
             plt.plot(timeaxis.transpose(),seas_cyc_1.transpose(),linestyle='solid')
             plt.plot(timeaxis.transpose(),seas_cyc_2.transpose(),linestyle='dashed')
             #plt.ylim(seas_cyc_1.values.min()-1,seas_cyc_1.values.max()+1)
-            wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
-            plt.title('LWT '+wtlabel+' '+model[j].upper()+' '+str(len(mrun))+' members '+str(taryears[0])+'-'+str(taryears[1])+' '+aggreg+' dtrend '+detrend+' anom '+anom+' '+region1+' (solid) and '+region2+' (dashed)',fontsize=titlesize)
-            savename = figs+'/'+aggreg+'/seascyc/'+model[j]+'_'+str(len(mrun))+'_seasonal_cycle_LWT_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+aggreg+'_dtrend_'+detrend+'_anom_'+anom+'_'+str(rollw)+'_'+region1+region2+'.'+outformat
+            #wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
+            plt.title(wtlabel+' '+ensemble_label+' '+str(len(mrun))+' '+str(taryears[0])+'-'+str(taryears[1])+' '+aggreg+' dtrend '+detrend+' anom '+anom+' '+region1+' (solid) and '+region2+' (dashed)',fontsize=titlesize)
+            savename = seascyc_dir+'/seasonalcycle_'+ensemble_label+'_'+str(len(mrun))+'m_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+aggreg+'_dtrend_'+detrend+'_anom_'+anom+'_'+str(rollw)+'_'+region1+region2+'.'+outformat
             plt.savefig(savename,dpi=dpival)
             plt.close('all')
 

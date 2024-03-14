@@ -17,13 +17,14 @@ exec(open('analysis_functions.py').read())
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameter
-ensemble = 'ec_earth3' #cera20c or mpi_esm_1_2_hr or ec_earth3
-experiment = 'dcppA' #historical, amip, piControl, 20c or dcppA
-city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+ensemble = 'cera20c' #cera20c or mpi_esm_1_2_hr or ec_earth3
+experiment = '20c' #historical, amip, piControl, 20c or dcppA
+#city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+city = ['Wellington']
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
-taryears = [1971,2028] #start and end year, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears = [1901,2010] #start and end year, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 lead_time = 10 #currently only used for experiment = dcppA; this is the lead time of the forecasts that were concatenated to form a single continuous time series in interpolator_xesmf.py
 tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte
 center_wrt = 'ensemble_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise

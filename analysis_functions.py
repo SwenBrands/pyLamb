@@ -450,7 +450,8 @@ def load_and_aggregate_wts_anom(filename,region_f,taryears,tarwts,aggregation,ti
         interval_f = int(float(aggregation)*1) #here used to aggregate the daily areal mean counts obtained hereafter
         
         #daily counts used to derived anomalies
-        daycount = arr_tarwts_f.rolling(time=interval_a,center=True).sum().dropna('time')
+        #daycount = arr_tarwts_f.rolling(time=interval_a,center=True).sum().dropna('time') #absolute
+        daycount = arr_tarwts_f.rolling(time=interval_a,center=True).sum().dropna('time')/interval_a*100 #percentage of the day covered with this LWT 
         daycount = daycount[0::interval_a] #remove overlapping data
         dates_a = pd.DatetimeIndex(daycount.time)
         
@@ -578,7 +579,8 @@ def plot_seas_cycle(seas_cyc_f,detrend,anom,wtnames,tarwts,modellabel,runlabel,t
     plt.savefig(savename,dpi=dpival)
     plt.close('all')
 
-def plot_time_series(time_series_f,detrend,anom,wtnames,tarwts,modellabel,runlabel,taryears,seaslabel,aggreg_f,regionlabel,outformat,dpival,titlesize,cutoff,meanperiod):
+#def plot_time_series(time_series_f,detrend,anom,wtnames,tarwts,modellabel,runlabel,taryears,seaslabel,aggreg_f,regionlabel,outformat,dpival,titlesize,cutoff,meanperiod): #old format
+def plot_time_series(time_series_f,detrend,aggreg_f,savename_f,titlelabel_f,dpival,cutoff=None,titlesize=None):
     """plots time series of i models / reanalyses (or runs thereof) and j time-steps"""
     print('you are here')
     if aggreg_f == 'year':
@@ -612,10 +614,8 @@ def plot_time_series(time_series_f,detrend,anom,wtnames,tarwts,modellabel,runlab
     plt.xlim(time_axis[0],time_axis[-1])
     plt.ylabel(timestep+' areal mean occurrence frequency')
     plt.ylim(time_series_f.min(),time_series_f.max())
-    wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
-    plt.title('LWT '+wtlabel+' '+modellabel.upper()+' '+str(runlabel)+' members '+str(taryears[0])+'-'+str(taryears[1])+'-'+seaslabel+' '+aggreg_f+' dtrend '+detrend+' anom '+anom+' '+regionlabel, size=titlesize)
-    savename = figs+'/'+aggreg_f+'/timeseries/'+modellabel+'_'+str(runlabel)+'_members_timeseries_LWT_'+wtlabel.replace(" ","_")+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg_f+'_dtrend_'+detrend+'_anom_'+anom+'_'+regionlabel+'.'+outformat
-    plt.savefig(savename,dpi=dpival)
+    plt.title(titlelabel_f,size=titlesize)
+    plt.savefig(savename_f,dpi=dpival)
     plt.close('all')
 
 
