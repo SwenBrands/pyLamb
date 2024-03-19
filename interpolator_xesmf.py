@@ -37,19 +37,25 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 ##MEMORY EFFICIENT VERSION OF interpolator_north.py, loads GCM data file by file using xarray.open_dataset instead of xarray.open_mfdataset
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
-experiment = 'historical' #historical, 20c, amip, piControl, ssp245, ssp585, dcppA
-lead_time = 10 #lead time in years, only applied if experiment = 'dcppA'
+experiment = 'rcp85' #historical, 20c, amip, piControl, ssp245, ssp585, rcp85, dcppA
+lead_time = 1 #lead time in years, only applied if experiment = 'dcppA'
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
 hemis = 'sh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
-# historical runs extended with ssp245
-model = ['era5']
-model_label = ['ERA5'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+# # rcp85 runs successfully interpolated for the NH and SH
+model = ['miroc_esm']
+model_label = ['MIROC-ESM'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
 mrun = ['r1i1p1']
 mycalendar = ['gregorian']
+
+# # historical runs extended with ssp245
+# model = ['era5']
+# model_label = ['ERA5'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+# mrun = ['r1i1p1']
+# mycalendar = ['gregorian']
 
 # # historical runs extended with ssp245
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -110,7 +116,7 @@ if filesystem == 'extdisk': #for external hard disk
     root1 = '/media/swen/ext_disk2/datos/GCMData/'
     savedir1 = root1
     rundir = home+'/datos/tareas/lamb_cmip5/pyLamb'
-elif (filesystem == 'lustre') & (experiment != 'dcppA') & (~np.isin('era5',model)): #for filesystems at MeteoGalicia mounted by Sergio
+elif (filesystem == 'lustre') & (experiment != 'dcppA') & (~np.isin('era5',model)): #standard root on lustre
     root1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     savedir1 = root1
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
@@ -469,5 +475,5 @@ endtime = time.time()
 elaptime = endtime - starttime
 print('INFO: The following calendars were assinged; one for each GCM run:')
 print(calendar_list)
-print('interpolator_highres_py3.py has been run successfully! The elapsed time is '+str(elaptime)+'seconds, exiting now...')
+print('interpolator_xesmf.py has been run successfully! The elapsed time is '+str(elaptime)+'seconds, exiting now...')
 quit()

@@ -75,8 +75,10 @@ def get_ensemble_config(ensemble_f,experiment_f):
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3' and experiment_f == 'dcppA':
-        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        # model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        # mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        model_f = ['ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r2i1p1f1']
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3' and experiment_f == 'historical':
@@ -117,6 +119,15 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
         taryears_f=[1979,2017]
         timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 10:
+        taryears_f=[1970,2028]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 5:
+        taryears_f=[1965,2023]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 1:
+        taryears_f=[1961,2019]
+        timestep_f = '6h'
     elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1961-2028 for comparison of the historical+ssp245 runs with the dcppA runs
         print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp245 runs to cover the 1961-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
         #taryears_f = [1971,2028]
@@ -138,11 +149,14 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
         taryears_f=[1940,2022]
         #timestep_f = '6h'
         timestep_f = '3h'
-    elif experiment_f in ('ssp126','ssp245','ssp370','ssp585'):
-        taryears_f=[2015,2100]
-        timestep_f = '6h'
     elif experiment_f == 'piControl' and model_f == 'mpi_esm_1_2_lr':
         taryears_f=[1850,2261] #the max and min years are limited in pandas, see https://calmcode.io/til/pandas-timerange.html
+        timestep_f = '6h'
+    elif experiment_f in ('rcp85') and model_f == 'miroc_esm':
+        taryears_f=[2006,2100]
+        timestep_f = '6h'
+    elif experiment_f in ('ssp126','ssp245','ssp370','ssp585'):
+        taryears_f=[2015,2100]
         timestep_f = '6h'
     elif experiment_f == '20c' and model_f == 'cera20c':
         taryears_f=[1901,2010]
@@ -150,15 +164,6 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == '20c' and model_f == 'era5':
         taryears_f=[1940,2022]
         timestep_f = '3h'
-    elif experiment_f == 'dcppA' and lead_time_f == 10:
-        taryears_f=[1970,2028]
-        timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 5:
-        taryears_f=[1965,2023]
-        timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 1:
-        taryears_f=[1961,2019]
-        timestep_f = '6h'
     else:
         raise Exception('Error: check entry for <experiment_f> !')
     return(taryears_f,timestep_f)
@@ -755,4 +760,23 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     cbar.set_label(cbarlabel_f, rotation=270, labelpad=+12, y=0.5, fontsize=titlesize_f)
     plt.title(title_f, fontsize=titlesize_f-1)
     plt.savefig(savename_f,dpi=dpival_f)
-    plt.close('all')   
+    plt.close('all')
+
+def get_monthly_lwt_counts(nc_f,lwt_f):
+    '''calculates monthly LWT counts from hourly instantaneous LWT type time series.'''
+    #modify origional LWT time series containing 27 types to a binary absence (0) - occurrence (1) time series of the requested types only
+    bin_array_f = np.zeros(nc_f.shape)
+    tarwt_ind_f = np.where(nc_f.isin(lwt_f))
+    bin_array_f[tarwt_ind_f] = 1
+    arr_tarwts_f = xr.DataArray(data=bin_array_f,coords=[pd.DatetimeIndex(nc_f.time),nc_f.lon,nc_f.lat],dims=['time','lon','lat'],name='binary_lwt')
+    #calculate monthly sums
+    arr_tarwts_f = arr_tarwts_f.resample(time='1M').sum()
+    days_per_month_f = arr_tarwts_f.time.dt.days_in_month
+    if any(days_per_month_f < 28):
+        raise Exception('ERROR: unexpected entry for <days_per_month_f> !')
+    return(arr_tarwts_f,days_per_month_f)
+    arr_tarwts_f.close()
+    days_per_month_f.close()
+    nc_f.close()
+    del(nc_f,lwt_f,arr_tarwts_f,days_per_month_f,bin_array_f,tarwt_ind_f,bin_array_f)
+    gc.collect() #explicetly free memory

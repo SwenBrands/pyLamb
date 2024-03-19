@@ -43,8 +43,6 @@ taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the star
 city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
-#tarmonths = [[12,1,2],[6,7,8],[1,2,3,4,5,6,7,8,9,10,11,12]] #list of lists containing the considered seasons
-#tarmonths = [[12,1,2]] #list of lists containing the considered seasons
 seasons = ['DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
 tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, 15 = purely directional west
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
@@ -87,10 +85,6 @@ print('The reference period used for anomaly calculation is '+str(ref_period))
 
 if aggreg != 'year': #check for correct usage of the script
     raise Exception("Bad call of the script: This script currently only works for yearly LWT counts, i.e. aggreg = 'year' !)")
-
-# seaslabel = str(tarmonths).replace('[','').replace(']','').replace(', ','')
-# if seaslabel == '123456789101112':
-    # seaslabel = 'yearly'
 
 wtnames = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN', 'PDNE', 'PDE', 'PDSE', 'PDS', 'PDSW', 'PDW', 'PDNW', 'PDN', 'PC', 'DCNE', 'DCE', 'DCSE', 'DCS', 'DCSW', 'DCW', 'DCNW', 'DCN', 'U']
 wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
