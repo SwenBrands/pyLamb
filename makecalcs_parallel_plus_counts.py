@@ -43,10 +43,11 @@ save_indices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
 calc_monthly_counts = 'yes' # yes or no, calculate monthly LWT count, this part runs in parallel
 monthly_calc = 'serial' # serial or parallel, how to calculate the monthly LWT counts
 verbose_level = 2 #detail of verbose level used by the joblib Parallel function
+compression_level = 1 #compression level of the output files
 lead_time = 1 #lead time in years, currently only used for dcppA experiments
 
 #save monthly counts for all 27 types
-tarwts = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27]] #list of lists containing target LWTs for which monthly frequencies will be stored
+tarwts = np.arange(1,28) #The full LWT scheme will be considered, 1 = PA, 27 = U
 tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN','PDNE', 'PDE', 'PDSE', 'PDS', 'PDSW', 'PDW', 'PDNW', 'PDN', 'PC','DCNE', 'DCE', 'DCSE', 'DCS', 'DCSW', 'DCW', 'DCNW', 'DCN', 'U']
 
 # #save monthly counts for 11 types
@@ -54,13 +55,13 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 # #tarwts_name = ['PA', 'DANE_PDNE_DCNE', 'DAE_PDE_DCE', 'DASE_PDSE_DCSE', 'DAS_PDS_DCS', 'DASW_PDSW_DCSW', 'DAW_PDW_DCW', 'DANW_PDNW_DCNW', 'DAN_PDN_DCN','PC','U'] #original names for 11 types
 # tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
 
-# # ERA5
-# model = ['era5']
-# mrun =  ['r1i1p1']
+# ERA5
+model = ['era5']
+mrun =  ['r1i1p1']
 
-# historical runs extended with ssp245 to compare with dcppA runs below
-model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# # historical runs extended with ssp245 to compare with dcppA runs below
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 
 # # dcppA runs
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -254,7 +255,7 @@ for mm in list(range(len(model))):
     wtseries = wtseries.astype(np.int16) #convert to integer values
     if experiment == 'dcppA':
         newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
-        newfile_mon = tarpath_step_mon+'/wtcount_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
+        newfile_mon = tarpath_step_mon+'/wtcount_mon_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
     else:
         newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
         newfile_mon = tarpath_step_mon+'/wtcount_mon_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
@@ -329,7 +330,7 @@ for mm in list(range(len(model))):
             for lwt in np.arange(len(tarwts)):
                 #modify origional LWT time series containing 27 types to a binary absence (0) - occurrence (1) time series of the requested types only
                 bin_array = np.zeros(outnc.shape)
-                tarwt_ind = np.where(outnc.isin(lwt))
+                tarwt_ind = np.where(outnc.isin(tarwts[lwt]))
                 bin_array[tarwt_ind] = 1
                 arr_tarwts = xr.DataArray(data=bin_array,coords=[pd.DatetimeIndex(outnc.time),outnc.lon,outnc.lat],dims=['time','lon','lat'],name='binary_lwt')
                 #calculate monthly sums and assign
@@ -346,7 +347,7 @@ for mm in list(range(len(model))):
         days_per_month = xr.DataArray(data=days_per_month,coords=[pd.DatetimeIndex(arr_tarwts.time)],dims=['time'],name='days_per_month').astype('int16')
         out_dataset_mon = xr.Dataset({'counts': arr_tarwts, 'days_per_month': days_per_month})
         print('Saving monthly LWT counts at '+newfile_mon)
-        out_dataset_mon.to_netcdf(newfile_mon, encoding = {'counts': {'dtype': 'int16'},'days_per_month': {'dtype': 'int16'}})
+        out_dataset_mon.to_netcdf(newfile_mon, encoding = {'counts': {'dtype':'int16', 'zlib':True, 'complevel':compression_level},'days_per_month': {'dtype': 'int16'}})
         #out_dataset_mon.to_netcdf(newfile_mon)
         out_dataset_mon.close()
         arr_tarwts.close()
@@ -361,7 +362,7 @@ for mm in list(range(len(model))):
     
     #then store the instantaneous and monthly files and close all related xr objectss
     print('Saving hourly instantaneous LWT time series at '+newfile)
-    outnc.to_netcdf(newfile, encoding = {'wtseries': {'dtype': 'int16'}})
+    outnc.to_netcdf(newfile, encoding = {'wtseries': {'dtype':'int16', 'zlib':True, 'complevel':compression_level}})
     outnc.close()
     del(outnc,newfile)
     

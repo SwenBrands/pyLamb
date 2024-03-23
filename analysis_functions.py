@@ -84,8 +84,10 @@ def get_ensemble_config(ensemble_f,experiment_f):
     elif ensemble_f == 'ec_earth3' and experiment_f == 'historical':
         #model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
         #mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1']
-        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-        mrun_f = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1'] #these are the runs which were concatenated with the ssp245 experiments to cover 1979-2028 using links
+        # model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        # mrun_f = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1'] #these are the runs which were concatenated with the ssp245 experiments to cover 1979-2028 using links
+        model_f = ['ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r4i1p1f1'] 
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
@@ -723,11 +725,11 @@ def get_random_sample(statsmodel_object,ntime_f):
     return(rand_sample_f)
 
 #def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,units_f): #former version
-def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None):
+def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,origpoint=None):
     '''origpoint refers to a single point to be plotted on the map, e.g. the single point where LWT counts are associated with SST grid-boxes around the World'''
     fig = plt.figure()
-    toplayer_x = xx.flatten()[agree_ind_f.flatten()]
-    toplayer_y = yy.flatten()[agree_ind_f.flatten()]
+    toplayer_x = xx_f.flatten()[agree_ind_f.flatten()]
+    toplayer_y = yy_f.flatten()[agree_ind_f.flatten()]
     maxind = np.argsort(pattern_f.flatten())[-1]
     max_x = xx_f.flatten()[maxind]
     max_y = yy_f.flatten()[maxind]
@@ -735,8 +737,8 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     min_x = xx_f.flatten()[minind]
     min_y = yy_f.flatten()[minind]
 
-    ax = fig.add_subplot(111, projection=map_proj)
-    ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
+    ax = fig.add_subplot(111, projection=map_proj_f)
+    ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy_f.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
     ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
             
     image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
@@ -748,9 +750,12 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
         pointsize_f = 0.5
         marker_f = 'o'
 
-    ax.plot(toplayer_x, toplayer_y, color='blue', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
     if origpoint != None:
-        ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)        
+        ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
+        #ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=map_proj_f, zorder=5) 
+    
     ##plot parallels and meridians
     #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
     #gl.xformatter = LONGITUDE_FORMATTER

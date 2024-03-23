@@ -6,7 +6,7 @@
 source ${HOME}/.bashrc
 
 #input parameters
-mode='interpolate' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse',get_csd_local or 'map_lowfreq_var'
+mode='makecalcs' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse',get_csd_local or 'map_lowfreq_var'
 
 #check python version
 echo "Your Python version is:"
@@ -21,7 +21,7 @@ then
 	python interpolator_xesmf.py > ${LOGDIR}/log_interpolator_xesmf.log
 elif [ ${mode} = 'makecalcs' ]
 then
-	python makecalcs_parallel.py > ${LOGDIR}/log_makecalcs_parallel.log
+	python makecalcs_parallel_plus_counts.py > ${LOGDIR}/log_makecalcs_parallel.log
 elif [ ${mode} = 'analyse' ]
 then
 	python analysis_hist.py > ${LOGDIR}/log_analysis_hist.log
