@@ -16,13 +16,13 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 
 #set input parameters
 region1 = 'nh' #region 1 as defined in analysis_functions.py
-region2 = 'sh' #region 2 as defined in analysis_functions.py
-tarwts_various = [[1],[18],[7,15,24]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+region2 = 'sh_midlats' #region 2 as defined in analysis_functions.py
+tarwts_various = [[7,15,24],[1],[18]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 # tarwts_various = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #loop through various seasons for exploratory data analysis
 # tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
 taryears = [1950,2010] #start and end yeartaryears = [1979,2005] #start and end year
-aggreg = '10' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
+aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
 fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
 wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
@@ -69,12 +69,12 @@ if aggreg == 'year':
 #get hemispheres for the two target regions
 if region1 in ('nh','escena','iberia','eurocordex','medcordex','cordexna','north_atlantic'):
     hemis1 = 'nh'
-elif region1 in ('sh'):
+elif region1 in ('sh','sh_midlats'):
     hemis1 = 'sh'
 
 if region2 in ('nh','escena','iberia','eurocordex','medcordex','cordexna','north_atlantic'):
     hemis2 = 'nh'
-elif region2 in ('sh'):
+elif region2 in ('sh','sh_midlats'):
     hemis2 = 'sh'
 
 for tarwts in tarwts_various:

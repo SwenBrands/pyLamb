@@ -15,8 +15,6 @@ from statsmodels.tsa.arima_process import ArmaProcess
 import statsmodels.api as sm
 import xskillscore as xs
 import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
-exec(open('analysis_functions.py').read())
-exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 
 #set input parameter
 obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
@@ -31,18 +29,32 @@ ensemble_color = ['orange','black','grey','blue']
 ensemble_linestyle = ['dashed','dashed','solid','dotted']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
-seasons = ['JJA','DJF'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-#tarwts = [[1],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[18],[27]] #list of lists containing target LWTs for which monthly frequencies will be stored
-tarwts = [['PA'], ['DANE','PDNE','DCNE'], ['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
+# seasons = ['ONDJFM','AMJJAS','DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[10,11,12,1,2,3],[4,5,6,7,8,9],[12,1,2],[1,2,3]] #list of months corresponding to each season
+seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
+
+tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
 tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
+
+# tarwts = [['PA'],['DANE','PDNE','DCNE']] #original names for 11 types
+# tarwts_name = ['PA','NE'] #summarized names for 11 types
+
+#tarwts = [[1],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[18],[27]] #list of lists containing target LWTs for which monthly frequencies will be stored
 # tarwts_name = ['PA', 'DANE_PDNE_DCNE', 'DAE_PDE_DCE', 'DASE_PDSE_DCSE', 'DAS_PDS_DCS', 'DASW_PDSW_DCSW', 'DAW_PDW_DCW', 'DANW_PDNW_DCNW', 'DAN_PDN_DCN','PC','U'] #original names for 11 types
 
-center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
+#set directory paths
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs/ec_earth3' #base path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2'
+#add_functions_root = '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal' #path to additional functions used by pySeasonal
+rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
+
+#set options for statistical analysis
+center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
 rho_ref = '20c_era5' #20c_era5 or 20c_cera20c; reference observational dataset used to calculate correlations. Must be included in the <experiment_out> input parameter defined above
+detrending = 'no' #remove linear trend from LWT count time series, yes or no
 
 #options used for periodgram, experimental so far, see https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
@@ -63,8 +75,15 @@ aggreg = 'year' #unlike map_lowfreq_var.py, this script currently only works for
 anom = 'no' #not relevant here since yearly counts are considered, i.e. the annual cycle is not present in the time series, is kept for future versions of the script
 
 ##execute ###############################################################################################
+os.chdir(rundir)
+exec(open('analysis_functions.py').read())
+exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
+#exec(open(add_functions_root+'/functions_seasonal.py').read())
+
 if aggreg != 'year': #check for correct usage of the script
-    raise Exception("Bad call of the script: This script currently only works for yearly LWT counts, i.e. aggreg = 'year' !)")
+    raise Exception("ERROR: Bad call of the script: This script currently only works for yearly LWT counts, i.e. aggreg = 'year' !)")
+if len(tarwts) != len(tarwts_name):
+    raise Exception('ERROR: the lenght of <tarwts> must equal the lenght of <tarwts_name> !')
 
 timestep = 'mon'
 taryears = [np.max(start_years),np.min(end_years)] #years common to all experiments defined in <experiment>
@@ -133,13 +152,19 @@ for lwt in np.arange(len(tarwts)):
                 del(wt_nh,wt_sh)
                 
                 #select requested season
-                if seasons[sea] in ('DJF','MAM','JJA','SON'):
+                if seasons[sea] in ('MAM','JJA','SON'):
                     wt = wt.sel(time=(wt['time'].dt.season == seasons[sea]))
                     print('Processing '+seasons[sea]+' season...')
+                elif seasons[sea] in ('DJF','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+                    print('Processing '+seasons[sea]+' season...')
+                    # wt = wt.isel(time=wt.time.dt.month.isin(months[sea])) #get target months
+                    # wt = wt.rolling(time=len(months[sea])).sum() #rolling sum
+                    # wt = wt.isel(time=wt.time.dt.month == months[sea][-1]) #get the accumulated values ending in February
+                    wt = get_seasonal_mean(wt,months[sea])
                 elif seasons[sea] == 'year':
                     print('For season[sea] = '+seasons[sea]+', the entire calendar year will be considered.')
                 else:
-                    raise Exception('ERROR: Unknown entry for '+seasons[sea]+' !!')
+                    raise Exception('ERROR: check entry for <seasons[sea]> !')
                     
                 # #add one year for DJF values
                 # if seasons[sea] == 'DJF':
@@ -157,34 +182,44 @@ for lwt in np.arange(len(tarwts)):
                 #retain requested LWTs, sum along lwt dimension to get the joint counts per month
                 wt = wt.sel(lwt=tarwts[lwt]).sum(dim='lwt')
                 
-                #calculate year-to-year relative frequencies (%)
-                wt = wt.groupby('time.year').sum('time')
+                ##calculate year-to-year relative frequencies (%)
+                wt = wt.groupby('time.year').sum('time').rename({'year':'time'})
                 wt.counts[:] = wt.counts / (wt.days_per_month*int(timestep_h[0]))*100
                 
+                #optional linear detrending
+                if detrending == 'yes':
+                    print('INFO: As requested by the user, the year-to-year model LWT count time series are linearly detrended.')
+                    wt.counts[:] = lin_detrend(wt.counts,'no')
+                elif detrending == 'no':
+                    print('INFO: As requested by the user, the year-to-year LWT count time series are not detrended.')
+                else:
+                    raise Exceptions('ERROR: check entry for <detrending> input parameter !')
+                
                 #init numpy array to be filled with year-to-year relative LWT frequencies, loaded experiments and lead times
-                if sea == 0 and en == 0 and mm == 0:
+                if lwt == 0 and sea == 0 and en == 0 and mm == 0:
                     taryears_index = np.arange(taryears[0],taryears[1]+1) 
-                    wt_rf_np = np.zeros((len(seasons),len(experiment),len(model),len(taryears_index),len(wt.lon),len(wt.lat)))
+                    wt_rf_np = np.zeros((len(tarwts),len(seasons),len(experiment),len(model),len(taryears_index),len(wt.lon),len(wt.lat)))
                     experiment_loaded = []
                     lead_time_loaded = []
                     #dimensions needed to convert wt_rf_np into xarray data array format
-                    years = wt.year
+                    years = wt.time
                     lon = wt.lon
                     lat = wt.lat
                 
                 #assign
-                wt_rf_np[sea,en,mm,:,:,:] = wt.counts.values
+                wt_rf_np[lwt,sea,en,mm,:,:,:] = wt.counts.values
                 
                 #clean up
                 wt.close()
                 del(wt)
             
-    #convert to xarray data array
-    run_index = np.arange(len(mrun))
-    wt_mod = xr.DataArray(wt_rf_np, coords=[seasons, experiment_out, run_index, years, lon, lat ], dims=['season','experiment','run_index','time','lon','lat'], name='counts')
-    wt_mod.attrs['units'] = 'relative frequency per year (%)'
+#convert to xarray data array
+run_index = np.arange(len(mrun))
+wt_mod = xr.DataArray(wt_rf_np, coords=[tarwts_name,seasons, experiment_out, run_index, years, lon, lat ], dims=['lwt','season','experiment','run_index','time','lon','lat'], name='counts')
+wt_mod.attrs['units'] = 'relative frequency per year (%)'
 
-    #load observations
+#load observations
+for lwt in np.arange(len(tarwts)):
     for sea in np.arange(len(seasons)):
         store_wt_nh_obs = store_wt_orig+'/'+timestep+'/historical/nh'
         store_wt_sh_obs = store_wt_orig+'/'+timestep+'/historical/sh'
@@ -199,9 +234,20 @@ for lwt in np.arange(len(tarwts)):
         del(wt_nh_obs,wt_sh_obs)
 
         #select requested season as above for model data
-        if seasons[sea] in ('DJF','MAM','JJA','SON'):
+        if seasons[sea] in ('MAM','JJA','SON'):
             wt_obs = wt_obs.sel(time=(wt_obs['time'].dt.season == seasons[sea]))
             print('Processing '+seasons[sea]+' season...')
+        elif seasons[sea] in ('DJF','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+            print('Processing '+seasons[sea]+' season...')
+            # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month.isin([12,1,2])) #get DJF months
+            # wt_obs = wt_obs.rolling(time=3).sum() #rolling sum
+            # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month == 2) #get the accumulated values ending in February
+            # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month.isin(months[sea])) #get target months
+            # wt_obs = wt_obs.rolling(time=len(months[sea])).sum() #rolling sum
+            # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month == months[sea][-1]) #get the accumulated values ending in February
+            wt_obs = get_seasonal_mean(wt_obs,months[sea])
+        else:
+            raise Exception('ERROR: check entry for <seasons[sea]> !')
 
         #select requested years
         dates_wt_obs = pd.DatetimeIndex(wt_obs.time.values)
@@ -212,69 +258,109 @@ for lwt in np.arange(len(tarwts)):
         wt_obs = wt_obs.sel(lwt=tarwts[lwt]).sum(dim='lwt')
 
         #calculate year-to-year relative frequencies (%)
-        wt_obs = wt_obs.groupby('time.year').sum('time')
+        wt_obs = wt_obs.groupby('time.year').sum('time').rename({'year':'time'})
         wt_obs.counts[:] = wt_obs.counts / (wt_obs.days_per_month*int(timestep_h[0]))*100
         
+        #optional linear detrending
+        if detrending == 'yes':
+            print('INFO: As requested by the user, the year-to-year observational LWT count time series are linearly detrended.')
+            wt_obs.counts[:] = lin_detrend(wt_obs.counts,'no')
+        elif detrending == 'no':
+            print('INFO: As requested by the user, the year-to-year LWT count time series are not detrended.')
+        else:
+            raise Exceptions('ERROR: check entry for <detrending> input parameter !')
+        
         #init numpy array to be filled with year-to-year relative LWT frequencies, loaded experiments and lead times
-        if sea == 0:
-            wt_rf_np_obs = np.zeros((len(seasons),len(taryears_index),len(wt_obs.lon),len(wt_obs.lat)))
+        if lwt == 0 and sea == 0:
+            wt_rf_np_obs = np.zeros((len(tarwts),len(seasons),len(taryears_index),len(wt_obs.lon),len(wt_obs.lat)))
             #dimensions needed to convert wt_rf_np into xarray data array format
-            years = wt_obs.year
+            years = wt_obs.time
             lon = wt_obs.lon
             lat = wt_obs.lat
         
         #assign
-        wt_rf_np_obs[sea,:,:,:] = wt_obs.counts.values
+        wt_rf_np_obs[lwt,sea,:,:,:] = wt_obs.counts.values
         
         #clean up
         wt_obs.close()
         del(wt_obs)
 
-    #convert to xarray data array
-    wt_obs = xr.DataArray(wt_rf_np_obs, coords=[seasons, years, lon, lat ], dims=['season','time','lon','lat'], name='counts')
-    wt_obs.attrs['units'] = 'relative frequency per year (%)'
+#convert to xarray data array
+wt_obs = xr.DataArray(wt_rf_np_obs, coords=[tarwts_name,seasons, years, lon, lat ], dims=['lwt','season','time','lon','lat'], name='counts')
+wt_obs.attrs['units'] = 'relative frequency per year (%)'
 
-    #start verificaiton
+#calculate ensemble-mean, standard deviation, signal to noise ratio (snr) and replicate observations to have the same dimensions as the model array
+wt_mod_mean = wt_mod.mean(dim='run_index').rename('ensemble_mean_counts') #year-to-year ensemble mean values
+wt_mod_std = wt_mod.std(dim='run_index').rename('ensemble_std_counts') #year-to-year ensemble standard deviation values
+wt_mod_snr = (wt_mod_mean / wt_mod_std).rename('ensemble_snr') #year-to-year ensemble signal to noise ratio
+
+wt_obs = xr.concat([wt_obs] * len(experiment), dim='experiment') #replicate observarions along <experiment> dimension
+wt_obs = wt_obs.assign_coords(experiment=wt_mod.experiment) #add coordinate <experiment>
+wt_obs = wt_obs.transpose('lwt','season','experiment','time','lon','lat') #reorder dimensions
+
+# wt_obs_mem = xr.concat([wt_obs] * len(wt_mod.run_index), dim='run_index') #replicate observarions along <run_index> dimension
+# wt_obs_mem = wt_obs_mem.assign_coords(run_index=wt_mod.run_index) #add coordinate <experiment>
+# wt_obs_mem = wt_obs_mem.transpose('lwt','season','experiment','run_index','time','lon','lat') #reorder dimensions
+
+wt_mod_mean_mem = xr.concat([wt_mod_mean] * len(wt_mod.run_index), dim='run_index') #replicate ensemble-mean value along <run_index> dimension
+wt_mod_mean_mem = wt_mod_mean_mem.assign_coords(run_index=wt_mod.run_index) #add coordinate <run_index>
+wt_mod_mean_mem = wt_mod_mean_mem.transpose('lwt','season','experiment','run_index','time','lon','lat') #reorder dimensions
+
+#calculate correlation measures between the ensemble-mean (i.e. the signal) and observations
+pearson_r = xs.pearson_r(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_r')
+pearson_pval = xs.pearson_r_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_pval')
+pearson_pval_effn = xs.pearson_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_pval_effn')
+spearman_r = xs.spearman_r(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_r')
+spearman_pval = xs.spearman_r_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval')
+spearman_pval_effn = xs.spearman_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval_effn')
+
+## calculate the ratio of predictable components (RPC) following equation 5 in https://doi.org/10.1038/s41612-018-0038-4
+## RPC calculated with mean explained variance
+# expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
+# expvar_mod_mean = expvar_mod.mean(dim='run_index') #get the mean of these explained variances
+# rpc = np.sqrt(pearson_r**2 / expvar_mod_mean).rename('rpc') #calculate the RPC
+
+# ## RPC calculated with mean correlation coefficient
+# corr_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r') #caculate the correlation coefficient between the multi-model mean and each member
+# corr_mod_mean = corr_mod.mean(dim='run_index') #get the mean of these correlation coefficients
+# rpc = np.sqrt(pearson_r**2 / corr_mod_mean**2).rename('rpc') #calculate the RPC
+
+## RPC calculated with ensemble mean and total variance, see equation 1 in doi:10.1002/2014GL061146
+var_sig = wt_mod_mean.std(dim='time')**2 #calculate the variance of the ensemble-mean time series
+var_tot = (wt_mod.std(dim='time')**2).mean(dim='run_index') #calculate the mean of the individual members' variance
+rpc = pearson_r / np.sqrt(var_sig / var_tot) #calculate the RPC
+
+#and plot the results
+for lwt in np.arange(len(tarwts_name)):
     for sea in np.arange(len(seasons)):
-        obs_seas = wt_obs.sel(season=seasons[sea])
+        #obs_seas = wt_obs.sel(lwt=tarwts_name[lwt],season=seasons[sea])
         for en in np.arange(len(experiment_out)):
-            #get ensemble mean of the annual relative LWT count frequencies for each experiment set in <experiment_out>, this is the yearly signal of the experiment
-            mod_seas_mean = wt_mod.sel(season=seasons[sea],experiment=experiment_out[en]).mean(dim='run_index')
-            #get ensemble standard deviation of the relative LWT count frequencies for each experiment set in <experiment_out>, this is the yearly noise term of the experiment
-            mod_seas_std = wt_mod.sel(season=seasons[sea],experiment=experiment_out[en]).std(dim='run_index')
+            #get correlation measueres for the specific LWT, season and experiment
+            spearman_r_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            spearman_pval_step = spearman_pval.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             
-            #get correlation coefficients and pvalues
-            pearson_r = xs.pearson_r(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('pearson_r')
-            pearson_pval = xs.pearson_r_p_value(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('pearson_pval')
-            pearson_pval_effn = xs.pearson_r_eff_p_value(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('pearson_pval_effn')        
-            spearman_r = xs.spearman_r(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('spearman_r')
-            spearman_pval = xs.spearman_r_p_value(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('spearman_pval')
-            spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas,mod_seas_mean,dim='time',skipna=True).rename('spearman_pval_effn')
-            
-            # #now map the results
-            # xx,yy = np.meshgrid(lon.values,lat.values)
-            # sig_ind = (spearman_pval.values < 0.05) & (spearman_r.values > 0)
             #plot nh and sh separately
-            spearman_r_nh = spearman_r.isel(lat=spearman_r.lat > 0)
-            spearman_r_sh = spearman_r.isel(lat=spearman_r.lat < 0)
-            spearman_pval_nh = spearman_pval.isel(lat=spearman_pval.lat > 0)
-            spearman_pval_sh = spearman_pval.isel(lat=spearman_pval.lat < 0)
+            spearman_r_nh = spearman_r_step.isel(lat=spearman_r_step.lat >= 0)
+            spearman_r_sh = spearman_r_step.isel(lat=spearman_r_step.lat < 0)
+            spearman_pval_nh = spearman_pval_step.isel(lat=spearman_pval_step.lat >= 0)
+            spearman_pval_sh = spearman_pval_step.isel(lat=spearman_pval_step.lat < 0)
             sig_ind_nh = (spearman_pval_nh.values < 0.05) & (spearman_r_nh.values > 0)
             sig_ind_sh = (spearman_pval_sh.values < 0.05) & (spearman_r_sh.values > 0)
             xx_nh, yy_nh = np.meshgrid(spearman_r_nh.lon.values,spearman_r_nh.lat.values)
             xx_sh, yy_sh = np.meshgrid(spearman_r_sh.lon.values,spearman_r_sh.lat.values)
             
-            title = 'Rank corr. coeff., '+tarwts_name[lwt]+', '+seasons[sea]+', '+experiment_out[en]+' vs '+obs.upper()+', '+str(taryears[0])+', '+str(taryears[1])
-            savedir = figs+'/'+experiment[en]+'/global'
+            title = 'Rank corr. coeff., dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+experiment_out[en]+' vs '+obs.upper()+', '+str(taryears[0])+', '+str(taryears[1])
+            savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/correlation'
             if os.path.isdir(savedir) != True:
                 os.makedirs(savedir)
             halfres = (lat.values[1]-lat.values[0])/2
             cbarlabel = 'Rank correlation coefficient'
-            savename_nh = savedir+'/spearman_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            savename_sh = savedir+'/spearman_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_nh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
             get_map_lowfreq_var(np.transpose(spearman_r_nh.values),xx_nh,yy_nh,np.transpose(sig_ind_nh),-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,map_proj_nh,origpoint=None)
             get_map_lowfreq_var(np.transpose(spearman_r_sh.values),xx_sh,yy_sh,np.transpose(sig_ind_sh),-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,map_proj_sh,origpoint=None)
-
+            del(sig_ind_nh,sig_ind_sh)
+            
             # ##plot nh and sh jointly
             # fig, ax = plt.subplots(subplot_kw={'projection': map_proj})
             # pcm1 = ax.pcolormesh(xx, yy, np.transpose(spearman_r.values), cmap=colormap, vmin=-1, vmax=1, transform=ccrs.PlateCarree(), shading='auto')       
@@ -288,19 +374,91 @@ for lwt in np.arange(len(tarwts)):
             # plt.savefig(savename,dpi=dpival)
             # plt.close('all')
             
+            #get RPC measures for the specific LWT, season and experiment
+            rpc_step = rpc.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            
+            #plot nh and sh separately
+            rpc_nh = rpc_step.isel(lat=rpc_step.lat >= 0)
+            rpc_sh = rpc_step.isel(lat=rpc_step.lat < 0)
+            sig_ind_nh = (rpc_nh.values > 1)
+            sig_ind_sh = (rpc_sh.values > 1)
+            xx_nh, yy_nh = np.meshgrid(rpc_nh.lon.values,rpc_nh.lat.values)
+            xx_sh, yy_sh = np.meshgrid(rpc_sh.lon.values,rpc_sh.lat.values)
+            
+            title = 'RPC, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+experiment_out[en]+' vs '+obs.upper()+', '+str(taryears[0])+', '+str(taryears[1])
+            savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/rpc'
+            if os.path.isdir(savedir) != True:
+                os.makedirs(savedir)
+            halfres = (lat.values[1]-lat.values[0])/2
+            cbarlabel = 'Ratio of Predictable Components'
+            savename_nh = savedir+'/rpc_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/rpc_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            get_map_lowfreq_var(np.transpose(rpc_nh.values),xx_nh,yy_nh,np.transpose(sig_ind_nh),0,2,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,map_proj_nh,origpoint=None)
+            get_map_lowfreq_var(np.transpose(rpc_sh.values),xx_sh,yy_sh,np.transpose(sig_ind_sh),0,2,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,map_proj_sh,origpoint=None)
+            del(sig_ind_nh,sig_ind_sh)           
+            
+            #get temporal mean snr ratios for the specific LWT, season and experiment from dcppa and historical and then calculate the ratio dcppa / historical
+            snr_dcppa_step = np.abs(wt_mod_snr.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])).mean(dim='time')
+            snr_hist_step = np.abs(wt_mod_snr.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment='historical')).mean(dim='time')
+            snr_ratio_step = snr_dcppa_step / snr_hist_step # calculate the ratio of the temporal-mean signal-to-noise ratios
+            #snr_ratio_step = snr_dcppa_step.mean(dim='time') / snr_hist_step.mean(dim='time') # calculate the ratio of the temporal-mean signal-to-noise ratios
+            #snr_ratio_step = snr_ratio_step.mean(dim='time') #calculate the temporal mean of the ratio of signal-to-noise ratios
+            snr_critval = 2 / np.sqrt(len(wt_mod.run_index)-1) #obtain the criticval value for a significant SNR
+            
+            #plot nh and sh separately
+            snr_ratio_nh = snr_ratio_step.isel(lat=snr_ratio_step.lat >= 0)
+            snr_ratio_sh = snr_ratio_step.isel(lat=snr_ratio_step.lat < 0)
+            snr_dcppa_nh = snr_dcppa_step.isel(lat=snr_ratio_step.lat >= 0)
+            snr_dcppa_sh = snr_dcppa_step.isel(lat=snr_ratio_step.lat < 0)
+            sig_ind_nh = (snr_ratio_nh.values > 1) & (snr_dcppa_nh.values > snr_critval)
+            sig_ind_sh = (snr_ratio_sh.values > 1) & (snr_dcppa_sh.values > snr_critval)
+            xx_nh, yy_nh = np.meshgrid(snr_ratio_nh.lon.values,snr_ratio_nh.lat.values)
+            xx_sh, yy_sh = np.meshgrid(snr_ratio_sh.lon.values,snr_ratio_sh.lat.values)
+            
+            title = 'Ratio of temporal mean SNR for '+experiment_out[en]+' / SNR for historical, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+str(taryears[0])+', '+str(taryears[1])
+            savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/snr'
+            if os.path.isdir(savedir) != True:
+                os.makedirs(savedir)
+            halfres = (lat.values[1]-lat.values[0])/2
+            cbarlabel = 'SNR dcppA / SNR hist.'
+            savename_nh = savedir+'/snr_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/snr_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            get_map_lowfreq_var(np.transpose(snr_ratio_nh.values),xx_nh,yy_nh,np.transpose(sig_ind_nh),0.5,1.5,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,map_proj_nh,origpoint=None)
+            get_map_lowfreq_var(np.transpose(snr_ratio_sh.values),xx_sh,yy_sh,np.transpose(sig_ind_sh),0.5,1.5,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,map_proj_sh,origpoint=None)
+            del(sig_ind_nh,sig_ind_sh)
+            
             #and clean up
-            obs_seas.close()
-            mod_seas_mean.close()
-            mod_seas_std.close()
+            wt_obs.close()
+            wt_mod_mean.close()
+            wt_mod_std.close()
+            wt_mod_snr.close()
+            snr_dcppa_step.close()
+            snr_hist_step.close()
+            snr_ratio_step.close()
+            snr_ratio_nh.close()
+            snr_ratio_sh.close()
+            snr_dcppa_nh.close()
+            snr_dcppa_sh.close()
+            wt_obs.close()
+            wt_mod_mean_mem.close()
             pearson_r.close()
             pearson_pval.close()
             pearson_pval_effn.close()
             spearman_r.close()
             spearman_r_nh.close()
             spearman_r_sh.close()
+            spearman_r_step.close()
+            spearman_pval_step.close()
             spearman_pval_nh.close()
             spearman_pval_sh.close()
             spearman_pval.close()
             spearman_pval_effn.close()
+            #expvar_mod.close()
+            #expvar_mod_mean.close()
+            #corr_mod.close()
+            #corr_mod_mean.close()
+            var_sig.close()
+            var_tot.close()
+            rpc.close()
 
 print('INFO: skill_maps_from_mon_counts.py has run successfully!')

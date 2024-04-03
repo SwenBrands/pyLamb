@@ -35,7 +35,7 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 #Note: The time period is filtered in the previous interpolation step accomplished by <interpolator_xesmf.py>
 
 n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-experiment = 'historical' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
+experiment = 'dcppA' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
 home = os.getenv('HOME')
 filesystem = 'lustre'
 hemis = 'sh' #sh or nh
@@ -43,8 +43,8 @@ save_indices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
 calc_monthly_counts = 'yes' # yes or no, calculate monthly LWT count, this part runs in parallel
 monthly_calc = 'serial' # serial or parallel, how to calculate the monthly LWT counts
 verbose_level = 2 #detail of verbose level used by the joblib Parallel function
-compression_level = 1 #compression level of the output files
-lead_time = 1 #lead time in years, currently only used for dcppA experiments
+compression_level = None #integer between 1 and 9 or None, compression level of the output files
+lead_time = 10 #lead time in years, currently only used for dcppA experiments
 
 #save monthly counts for all 27 types
 tarwts = np.arange(1,28) #The full LWT scheme will be considered, 1 = PA, 27 = U
@@ -55,17 +55,17 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 # #tarwts_name = ['PA', 'DANE_PDNE_DCNE', 'DAE_PDE_DCE', 'DASE_PDSE_DCSE', 'DAS_PDS_DCS', 'DASW_PDSW_DCSW', 'DAW_PDW_DCW', 'DANW_PDNW_DCNW', 'DAN_PDN_DCN','PC','U'] #original names for 11 types
 # tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
 
-# ERA5
-model = ['era5']
-mrun =  ['r1i1p1']
+# # ERA5
+# model = ['era5']
+# mrun =  ['r1i1p1']
 
 # # historical runs extended with ssp245 to compare with dcppA runs below
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
 # mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 
-# # dcppA runs
-# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-# mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+# dcppA runs
+model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
 
 # # ## accomplished rcp85 and ssp585 LWT catalogues for both the NH and SH
 # model = ['miroc_esm']
@@ -346,9 +346,16 @@ for mm in list(range(len(model))):
         arr_tarwts = xr.DataArray(data=arr_tarwts_np,coords=[tarwts_name,monthly_dates,outnc.lon,outnc.lat],dims=['lwt','time','lon','lat'],name='wtcount').astype('int16')
         days_per_month = xr.DataArray(data=days_per_month,coords=[pd.DatetimeIndex(arr_tarwts.time)],dims=['time'],name='days_per_month').astype('int16')
         out_dataset_mon = xr.Dataset({'counts': arr_tarwts, 'days_per_month': days_per_month})
-        print('Saving monthly LWT counts at '+newfile_mon)
-        out_dataset_mon.to_netcdf(newfile_mon, encoding = {'counts': {'dtype':'int16', 'zlib':True, 'complevel':compression_level},'days_per_month': {'dtype': 'int16'}})
-        #out_dataset_mon.to_netcdf(newfile_mon)
+        
+        #save monthly counts in netcdf format and close the respective Python objects
+        if isinstance(compression_level,int):
+            print('Saving monthly LWT counts at '+newfile_mon+' with compression level '+str(compression_level)+'...')
+            out_dataset_mon.to_netcdf(newfile_mon, encoding = {'counts': {'dtype':'int16', 'zlib':True, 'complevel':compression_level},'days_per_month': {'dtype': 'int16'}})
+        elif compression_level == None:
+            print('Saving monthly LWT counts at '+newfile_mon+' without compression...')
+            out_dataset_mon.to_netcdf(newfile_mon)
+        else:
+            raise Exception('ERROR: check entry for <compression_level> input parameter !')
         out_dataset_mon.close()
         arr_tarwts.close()
         days_per_month.close()

@@ -75,19 +75,19 @@ def get_ensemble_config(ensemble_f,experiment_f):
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3' and experiment_f == 'dcppA':
-        # model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-        # mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
-        model_f = ['ec_earth3','ec_earth3']
-        mrun_f = ['r1i1p1f1','r2i1p1f1']
+        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+        # model_f = ['ec_earth3','ec_earth3']
+        # mrun_f = ['r1i1p1f1','r2i1p1f1']
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3' and experiment_f == 'historical':
         #model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
         #mrun_f = ['r1i1p1f1','r3i1p1f1','r4i1p1f1','r7i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r20i1p1f1','r21i1p1f1','r23i1p1f1','r24i1p1f1','r25i1p1f1']
-        # model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-        # mrun_f = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1'] #these are the runs which were concatenated with the ssp245 experiments to cover 1979-2028 using links
-        model_f = ['ec_earth3','ec_earth3']
-        mrun_f = ['r1i1p1f1','r4i1p1f1'] 
+        model_f = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+        mrun_f = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1'] #these are the runs which were concatenated with the ssp245 experiments to cover 1979-2028 using links
+        # model_f = ['ec_earth3','ec_earth3']
+        # mrun_f = ['r1i1p1f1','r4i1p1f1'] 
         model_label_f = 'EC-Earth3'
         tarhours_f = [0,6,12,18]
     elif ensemble_f == 'ec_earth3_veg' and experiment_f == 'historical':
@@ -233,10 +233,13 @@ def get_target_coords(region_loc):
     elif region_loc == 'sh':
         latlims = [-90.,-30.]
         lonlims = [-180.,180.]
+    elif region_loc == 'sh_midlats': #southern hemisphere mid-latitudes
+        latlims = [-60.,-50.]
+        lonlims = [-180.,180.]
     else:
         raise Exception('ERROR: check entry for <region>!')
     return(latlims,lonlims)
-    
+
 
 def get_error_attrs(errortype):
     ''' get auxiliary variables need for plotting for a specific error type '''
@@ -343,6 +346,21 @@ def get_fig_transprobmat(prob_4d,lons_values,lats_values,cmap_probmat,edgecolors
             savepath = figpath+'/'+figfolder+'/'+region+'/transitions/plots/trans_prob_'+modellabel+'_'+region+'_lon_'+str(lons_values[ii])+'_lat_'+str(lats_values[jj])+'_lag_'+str(timelag*6)+'h.'+figformat
             plt.savefig(savepath, dpi = dpival)
             plt.close('all')
+
+def lin_detrend(xr_ar,rm_mean_f):
+    """also used in pySeasonal package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
+    coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
+    fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
+    if rm_mean_f == 'yes':
+        xr_ar_detrended = xr_ar - fit
+    elif rm_mean_f == 'no':
+        tiles_f = np.ones(len(xr_ar.dims))
+        tiles_f[0] = len(xr_ar.time)
+        meanvals_f = np.tile(xr_ar.mean(dim='time'),tiles_f.astype('int'))
+        xr_ar_detrended = xr_ar - fit + meanvals_f
+    else:
+        raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
+    return(xr_ar_detrended)
 
 def load_and_aggregate_wts(filename,region_f,taryears,tarwts,aggregation,timestep,latweighting,tarmonths_f):
     #load and process wt data
@@ -780,8 +798,18 @@ def get_monthly_lwt_counts(nc_f,lwt_f):
     if any(days_per_month_f < 28):
         raise Exception('ERROR: unexpected entry for <days_per_month_f> !')
     return(arr_tarwts_f,days_per_month_f)
-    arr_tarwts_f.close()
-    days_per_month_f.close()
-    nc_f.close()
-    del(nc_f,lwt_f,arr_tarwts_f,days_per_month_f,bin_array_f,tarwt_ind_f,bin_array_f)
-    gc.collect() #explicetly free memory
+    # arr_tarwts_f.close()
+    # days_per_month_f.close()
+    # nc_f.close()
+    # del(nc_f,lwt_f,arr_tarwts_f,days_per_month_f,bin_array_f,tarwt_ind_f,bin_array_f)
+    # gc.collect() #explicetly free memory
+
+def get_seasonal_mean(xr_ds_f,months_f):
+    '''calculates seasonal mean values for the data variables located in the xarray dataset <xr_ds_f>
+    for the season defined in the <months_f> list, the latter containing intergers, e.g. [12,1,2] for the DJF season'''
+    xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month.isin(months_f)) #get target months
+    xr_ds_f = xr_ds_f.rolling(time=len(months_f)).sum() #rolling sum
+    xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month == months_f[-1]) #get the accumulated values ending in February
+    return(xr_ds_f)
+    # xr_ds_f.close()
+    # del(xr_ds_f,months_f)
