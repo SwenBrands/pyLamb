@@ -743,17 +743,24 @@ def get_random_sample(statsmodel_object,ntime_f):
     return(rand_sample_f)
 
 #def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,units_f): #former version
-def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,origpoint=None):
+#def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,origpoint=None):
+def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,agree_ind=None,origpoint=None):
     '''origpoint refers to a single point to be plotted on the map, e.g. the single point where LWT counts are associated with SST grid-boxes around the World'''
     fig = plt.figure()
-    toplayer_x = xx_f.flatten()[agree_ind_f.flatten()]
-    toplayer_y = yy_f.flatten()[agree_ind_f.flatten()]
-    maxind = np.argsort(pattern_f.flatten())[-1]
-    max_x = xx_f.flatten()[maxind]
-    max_y = yy_f.flatten()[maxind]
-    minind = np.argsort(pattern_f.flatten())[0]
-    min_x = xx_f.flatten()[minind]
-    min_y = yy_f.flatten()[minind]
+    
+    # if agree_ind is None:
+        # print('No overlying pattern was found by get_map_lowfreq_var() function !')
+    # else:
+        # toplayer_x = xx_f.flatten()[agree_ind.flatten()]
+        # toplayer_y = yy_f.flatten()[agree_ind.flatten()]
+    
+    # #this next code passage is likely not used by any script any more and can probably be removed in the future
+    # maxind = np.argsort(pattern_f.flatten())[-1]
+    # max_x = xx_f.flatten()[maxind]
+    # max_y = yy_f.flatten()[maxind]
+    # minind = np.argsort(pattern_f.flatten())[0]
+    # min_x = xx_f.flatten()[minind]
+    # min_y = yy_f.flatten()[minind]
 
     ax = fig.add_subplot(111, projection=map_proj_f)
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy_f.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
@@ -765,12 +772,19 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
         pointsize_f = 0.25
         marker_f = '+'
     else:
-        pointsize_f = 0.5
+        pointsize_f = 0.25
         marker_f = 'o'
-
-    ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
-    #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
-    if origpoint != None:
+    
+    if agree_ind is None:
+        print('No <agree_ind> was found by get_map_lowfreq_var() function !')
+    else:
+        toplayer_x = xx_f.flatten()[agree_ind.flatten()]
+        toplayer_y = yy_f.flatten()[agree_ind.flatten()]
+        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+        #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
+    if origpoint is None:
+        print('No <origpoint> was found by get_map_lowfreq_var() function !')
+    else:
         ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
         #ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=map_proj_f, zorder=5) 
     
@@ -811,5 +825,49 @@ def get_seasonal_mean(xr_ds_f,months_f):
     xr_ds_f = xr_ds_f.rolling(time=len(months_f)).sum() #rolling sum
     xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month == months_f[-1]) #get the accumulated values ending in February
     return(xr_ds_f)
-    # xr_ds_f.close()
-    # del(xr_ds_f,months_f)
+    xr_ds_f.close()
+    del(xr_ds_f,months_f)
+
+def map_polar_single_field(xr_arr,title,savename_nh,savename_sh,minval,maxval,dpival,colormap,titlesize,cbarlabel):
+    '''maps a single field without superimposed layer for the northern and southern hemsiphere separately using a polar stereographic projection'''
+    xr_arr_nh = xr_arr.isel(lat=xr_arr.lat >= 0)
+    xr_arr_sh = xr_arr.isel(lat=xr_arr.lat < 0)
+    xx_nh, yy_nh = np.meshgrid(xr_arr_nh.lon.values,xr_arr_nh.lat.values)
+    xx_sh, yy_sh = np.meshgrid(xr_arr_sh.lon.values,xr_arr_sh.lat.values)    
+    if os.path.isdir(savedir) != True:
+        os.makedirs(savedir)
+    halfres = (xr_arr.lat.values[1]-xr_arr.lat.values[0])/2
+    get_map_lowfreq_var(np.transpose(xr_arr_nh.values),xx_nh,yy_nh,minval,maxval,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,ccrs.NorthPolarStereo(),agree_ind=None,origpoint=None)
+    get_map_lowfreq_var(np.transpose(xr_arr_sh.values),xx_sh,yy_sh,minval,maxval,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,ccrs.SouthPolarStereo(),agree_ind=None,origpoint=None)
+    xr_arr.close()
+    xr_arr_nh.close()
+    xr_arr_sh.close()
+    del(xr_arr,xr_arr_nh,xr_arr_sh)
+
+def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_f):
+    ''' Calculates the ratio of predictable components (RPC) following Eade et al. 2014, doi: 10.1002/2014GL061146; <xr_mod_f> contains the memberwise time-series of the ensemble,
+    <xr_mod_mean< contains the ensemble-mean time series averaged year-to-year over all members, and <xr_pearson_r> the Pearson correlation coefficient of the ensemble-mean time-series
+    with the observations; all the 3 objects are xarray DataArrays'''    
+    var_sig_f = xr_mod_mean_f.var(dim='time') #calculates the variance of the ensemble-mean time series
+    var_tot_f = xr_mod_f.var(dim='time').mean(dim='run_index') #calculates the mean of the individual members' variance
+    rpc = xr_pearson_f / np.sqrt(var_sig_f / var_tot_f) #calculates the RPC
+    
+    ## calculate the ratio of predictable components (RPC) following equation 5 in https://doi.org/10.1038/s41612-018-0038-4
+    ## RPC calculated with mean explained variance
+    # expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
+    # expvar_mod_mean = expvar_mod.mean(dim='run_index') #get the mean of these explained variances
+    # rpc = np.sqrt(pearson_r**2 / expvar_mod_mean).rename('rpc') #calculate the RPC
+    
+    # ## RPC calculated with mean correlation coefficient
+    # corr_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r') #caculate the correlation coefficient between the multi-model mean and each member
+    # corr_mod_mean = corr_mod.mean(dim='run_index') #get the mean of these correlation coefficients
+    # rpc = np.sqrt(pearson_r**2 / corr_mod_mean**2).rename('rpc') #calculate the RPC
+    
+    return(rpc)
+    xr_mod_f.close()
+    xr_mod_mean.close()
+    xr_person_f.close()
+    var_sig_f.close()
+    var_tot_f.close()
+    rpc.close()
+    del(var_sig_f,var_tot_f,rpc_f,xr_mod_f,xr_mod_mean,xr_pearson_f)
