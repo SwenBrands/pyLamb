@@ -780,7 +780,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
     else:
         toplayer_x = xx_f.flatten()[agree_ind.flatten()]
         toplayer_y = yy_f.flatten()[agree_ind.flatten()]
-        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+        ax.plot(toplayer_x, toplayer_y, color='white', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
         #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
     if origpoint is None:
         print('No <origpoint> was found by get_map_lowfreq_var() function !')
@@ -844,30 +844,83 @@ def map_polar_single_field(xr_arr,title,savename_nh,savename_sh,minval,maxval,dp
     xr_arr_sh.close()
     del(xr_arr,xr_arr_nh,xr_arr_sh)
 
-def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_f):
-    ''' Calculates the ratio of predictable components (RPC) following Eade et al. 2014, doi: 10.1002/2014GL061146; <xr_mod_f> contains the memberwise time-series of the ensemble,
-    <xr_mod_mean< contains the ensemble-mean time series averaged year-to-year over all members, and <xr_pearson_r> the Pearson correlation coefficient of the ensemble-mean time-series
-    with the observations; all the 3 objects are xarray DataArrays'''    
-    var_sig_f = xr_mod_mean_f.var(dim='time') #calculates the variance of the ensemble-mean time series
-    var_tot_f = xr_mod_f.var(dim='time').mean(dim='run_index') #calculates the mean of the individual members' variance
-    rpc = xr_pearson_f / np.sqrt(var_sig_f / var_tot_f) #calculates the RPC
+def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,approach='Eade'):
+    ''' Calculates the ratio of predictable components (RPC) following Eade et al. 2014, doi: 10.1002/2014GL061146 or Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4;
+    <xr_mod_f> contains the memberwise time-series of the ensemble, <xr_mod_mean_f> contains the ensemble-mean time series averaged year-to-year over all members, and <xr_pearson_r_f>
+    the Pearson correlation coefficient of the ensemble-mean time-series with the observations i.e. the observed predictable component; all the 3 objects are xarray DataArrays'''    
+    if approach == 'Eade':
+        ##Eade et al. 2014 approach
+        var_sig_f = xr_mod_mean_f.var(dim='time') #calculate the variance of the ensemble-mean time series
+        var_tot_f = xr_mod_f.var(dim='time').mean(dim='run_index') #calculates the mean of the individual members' variance
+        pc_mod_f = np.sqrt(var_sig_f / var_tot_f) #modelled predictable component, equivalent to perfect skill or potential skill
+        rpc_f = xr_pearson_r_f / pc_mod_f #calculate the RPC
+        var_sig_f.close()
+        var_tot_f.close()
+        del(var_sig_f,var_tot_f)
+    elif approach == 'Scaife':
+        ##Scaife et al. 2018, equation 5 working with correlation coefficient
+        pc_mod_f = xs.pearson_r(xr_mod_f,xr_mod_mean_f,dim='time',skipna=True).rename('pearson_r').mean(dim='run_index') #calculate the correlation coefficient between the multi-model mean and each member and take the mean along all members obtaining the modelled predictable component
+        rpc_f = np.sqrt(xr_pearson_r_f**2 / pc_mod_f**2).rename('rpc') #calculate the RPC
+    # elif approach == 'Scaife_expvar'
+        # ## RPC calculated with mean explained variance
+        # expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
+        # expvar_mod_mean = expvar_mod.mean(dim='run_index') #get the mean of these explained variances
+        # rpc = np.sqrt(pearson_r**2 / expvar_mod_mean).rename('rpc') #calculate the RPC
+    else:
+        raise Exception('ERROR: check entry for <approach> input parameter in the get_rpc() function !')
     
-    ## calculate the ratio of predictable components (RPC) following equation 5 in https://doi.org/10.1038/s41612-018-0038-4
-    ## RPC calculated with mean explained variance
-    # expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
-    # expvar_mod_mean = expvar_mod.mean(dim='run_index') #get the mean of these explained variances
-    # rpc = np.sqrt(pearson_r**2 / expvar_mod_mean).rename('rpc') #calculate the RPC
-    
-    # ## RPC calculated with mean correlation coefficient
-    # corr_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r') #caculate the correlation coefficient between the multi-model mean and each member
-    # corr_mod_mean = corr_mod.mean(dim='run_index') #get the mean of these correlation coefficients
-    # rpc = np.sqrt(pearson_r**2 / corr_mod_mean**2).rename('rpc') #calculate the RPC
-    
-    return(rpc)
+    return(rpc_f,pc_mod_f)
     xr_mod_f.close()
-    xr_mod_mean.close()
+    xr_mod_mean_f.close()
     xr_person_f.close()
-    var_sig_f.close()
-    var_tot_f.close()
-    rpc.close()
-    del(var_sig_f,var_tot_f,rpc_f,xr_mod_f,xr_mod_mean,xr_pearson_f)
+    rpc_f.close()
+    pc_mod_f.close()
+    del(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,rpc_f,pc_mod_f)
+
+def pvalue_correlation_diff(pearson1, pearson2, n1, n2):
+    '''caclulates the p-value for the difference in the correlation coefficients contained in the xarray DataArrays <pearson1> and <pearson2> 
+    caclculated upon the sample sizes <n1> and <n2>, respectively, both being either numpy arrays, floats or integers; <pearson1> and <pearson2> must have the same dimensions'''
+    # Fisher z transformation
+    z1 = 0.5 * np.log((1 + pearson1) / (1 - pearson1))
+    z2 = 0.5 * np.log((1 + pearson2) / (1 - pearson2))
+    # Standard errors
+    se1 = 1 / np.sqrt(n1 - 3)
+    se2 = 1 / np.sqrt(n2 - 3)
+    # Standard error of the difference between correlations
+    sed = np.sqrt(se1**2 + se2**2)
+    # Calculate z-score for the difference
+    z_diff = (z1 - z2) / sed
+    # Compute p-value
+    p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
+    p_value = xr.DataArray(p_value,coords=pearson1.coords,dims=pearson1.dims,name='p_value')
+    return(p_value)
+    pearson1.close()
+    pearson2.close()
+    p_value.close()
+    del(pearson1,pearson2,p_value)
+
+def draw_boxplot(xr_arr_f,xticks_f,tarwts_name_f,cbarlabel_f,savename_f,dpival_f,ymin_f,ymax_f,critval_f=None):
+    '''draws a boxplot of the quantity provided in the xarray data array <xr_arr_f> with two dimensions containing
+    1) the variable to be plot and 2) the grid-boxes in flattened format without the need of geographical reference information, i.e. not lat x lon or similar'''
+    fig = plt.figure()
+    plt.plot([-0.5,xticks_f[-1]+0.5],[0,0],linestyle='dotted',color='black',zorder=1) #plot 0 line
+    if critval_f is not None:
+        plt.plot([-0.5,xticks_f[-1]+0.5],[critval_f,critval_f],linestyle='dotted',color='red',zorder=2)
+        plt.plot([-0.5,xticks_f[-1]+0.5],[critval_f*-1,critval_f*-1],linestyle='dotted',color='red',zorder=3)
+    sns.boxplot(data=xr_arr_f.transpose('gridpoints','lwt'),zorder=4)
+    plt.xticks(ticks=xticks_f,labels=tarwts_name_f)
+    plt.xlabel('Lamb Weather Type')
+    plt.ylim([ymin_f,ymax_f]) #y axis is centred around 0
+    plt.ylabel(cbarlabel_f)
+    #plt.grid(axis='y',linestyle='dotted')
+    plt.savefig(savename_f,dpi=dpival_f)
+    plt.close('all')
+    del(fig)
+    xr_arr_f.close()
+    del(xr_arr_f,xticks_f,critval_f,tarwts_name_f,cbarlabel_f,savename_f,dpival_f)
+
+def z2r(z_f):
+    '''back-transformation of z-values provided in <z_f> to the Pearson correlation coefficient returned in <r_f> following Schönwiese 2006, page 178'''
+    r_f = (np.exp(z_f)-np.exp(z_f*-1)) / (np.exp(z_f)+np.exp(z_f*-1))
+    return(r_f)
+

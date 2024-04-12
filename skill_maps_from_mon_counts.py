@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-''''This script calculates and plots Lamb Weather Type time-series and signal-to-noise ratios at specified locations'''
+''''This script loads monthly LWT count time series from the historical and dcppA experiments run with the EC-Earth3 ensemble and calculates
+multiple measures of actual and potential predictability w.r.t to ERA5.'''
 
 #load packages
 import numpy as np
@@ -34,20 +35,21 @@ ensemble_color = ['orange','black','grey','blue']
 ensemble_linestyle = ['dashed','dashed','solid','dotted']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
+
 # seasons = ['ONDJFM','AMJJAS','DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
 # months = [[10,11,12,1,2,3],[4,5,6,7,8,9],[12,1,2],[1,2,3]] #list of months corresponding to each season
 
-seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
+# seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
 
-# seasons = ['ONDJFM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-# months = [[10,11,12,1,2,3]] #list of months corresponding to each season
+seasons = ['ONDJFM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+months = [[10,11,12,1,2,3]] #list of months corresponding to each season
 
-tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
-tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
+# tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
+# tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
 
-# tarwts = [['PA'],['DANE','PDNE','DCNE']] #original names for 11 types
-# tarwts_name = ['PA','NE'] #summarized names for 11 types
+tarwts = [['PA'],['DANE','PDNE','DCNE']] #original names for 11 types
+tarwts_name = ['PA','NE'] #summarized names for 11 types
 
 # tarwts = [['PA']] #original names for 11 types
 # tarwts_name = ['PA'] #summarized names for 11 types
@@ -64,7 +66,7 @@ meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
 rho_ref = '20c_era5' #20c_era5 or 20c_cera20c; reference observational dataset used to calculate correlations. Must be included in the <experiment_out> input parameter defined above
 detrending = 'yes' #remove linear trend from LWT count time series, yes or no
-test_level = 95 #test level in %, following the nomenclature used in Wilks 2006; used to obtaine the critical values for the RPC
+test_level = 90 #test level in %, following the nomenclature used in Wilks 2006; used to obtaine the critical values for the RPC
 repetitions = 100 #number of repetitions used for Monte-Carlo significance testing
 anom = 'yes' #yes or no; calculate correlation measures and RPC on anomalies or raw values, respectively
 exclude_members = 3 #number of members to be excluded for Monte-Carlo significance testing
@@ -329,45 +331,40 @@ spearman_r = xs.spearman_r(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('sp
 spearman_pval = xs.spearman_r_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval')
 spearman_pval_effn = xs.spearman_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval_effn')
 
-## RPC calculated with ensemble mean and total variance following Eade et al. 2014, see equation 1 in doi:10.1002/2014GL061146
-var_sig = wt_mod_mean.var(dim='time') #calculate the variance of the ensemble-mean time series
-var_tot = wt_mod.var(dim='time').mean(dim='run_index') #calculate the mean of the individual members' variance
-rpc_var = pearson_r / np.sqrt(var_sig / var_tot) #calculate the RPC based on signal / total model variance
+# ## RPC calculated with ensemble mean and total variance following Eade et al. 2014, see equation 1 in doi:10.1002/2014GL061146
+# var_sig = wt_mod_mean.var(dim='time') #calculate the variance of the ensemble-mean time series
+# var_tot = wt_mod.var(dim='time').mean(dim='run_index') #calculate the mean of the individual members' variance
+# rpc = pearson_r / np.sqrt(var_sig / var_tot) #calculate the RPC based on signal / total model variance
 # pc_mod = np.sqrt(var_sig/var_tot) #modelled predictable componenent, i.e. potential predictability
 
-## RPC according to equation 5 in Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4
-pc_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).mean(dim='run_index').rename('pearson_r')
-rpc = (pearson_r / pc_mod).rename('rpc_based_on_rho') #calculate the RPC based on the average correlation coefficient between the signal and individual members
-rpc_expvar = np.sqrt(pearson_r**2 / pc_mod**2).rename('rpc_based_on_explained_var') #calculate the RPC based on explained variance
+# ## RPC according to equation 5 in Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4
+# pc_mod_scaife = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).mean(dim='run_index').rename('pearson_r')
+# rpc_rho = (pearson_r / pc_mod).rename('rpc_based_on_rho') #calculate the RPC based on the average correlation coefficient between the signal and individual members
+# rpc_expvar = np.sqrt(pearson_r**2 / pc_mod**2).rename('rpc_based_on_explained_var') #calculate the RPC based on explained variance
 
-##RPC according to equation 1 in Kumar et al. 2014, Monthly Weather review
-var_sig_mem = xr.concat([var_sig] * len(wt_mod.run_index), dim='run_index') #replicate ensemble-mean value along <run_index> dimension
-var_sig_mem = var_sig_mem.assign_coords(run_index=wt_mod.run_index) #add coordinate <run_index>
-var_sig_mem = var_sig_mem.transpose('lwt','season','experiment','run_index','lon','lat') #reorder dimensions to match <pc_mod_kumar>
-var_sig_mem = xr.DataArray(var_sig_mem.values,coords=[var_sig_mem.lwt,var_sig_mem.season,var_sig_mem.experiment,var_sig_mem.run_index,var_sig_mem.lon,var_sig_mem.lat],dims=var_sig_mem.dims,name='signal_variance')
-var_mem = wt_mod.var(dim='time').rename('member_variance') #member variance
-ac_perfect = (wt_mod - wt_mod_mean).mean(dim='time') / (var_sig_mem*var_mem).mean(dim='run_index')
-ac = (wt_mod_mean - wt_obs).mean(dim='time') / (var_sig*wt_obs.var(dim='time'))
-rpc_kumar = ac / ac_perfect
+# get rpc from function according to Eade et al. 2014, doi:10.1002/2014GL061146, equation 1 and Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4, equation 5
+rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach='Eade') #rpc is the ratio of predictable componentes and pc_mod the modelled preditable component, pearson_r is the observed predictable component
 
-#test the significane of the difference between the observed and modelled predictable components, interpreted as two correlation coefficients
-# Fisher z transformation
-z1 = 0.5 * np.log((1 + pearson_r) / (1 - pearson_r))
-z2 = 0.5 * np.log((1 + pc_mod) / (1 - pc_mod))
-# Number of samples
-n1 = len(wt_mod.time)
-n2 = len(wt_mod.time)
-# Standard errors
-se1 = 1 / np.sqrt(n1 - 3)
-se2 = 1 / np.sqrt(n2 - 3)
-# Standard error of the difference between correlations
-sed = np.sqrt(se1**2 + se2**2)
-# Calculate z-score for the difference
-z_diff = (z1 - z2) / sed
-# Compute p-value
-p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
-rpc_sigind = p_value < 1-test_level/100
-rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_diff_pc')
+# #test the significane of the difference between the observed and modelled predictable components, interpreted as two correlation coefficients
+# # Fisher z transformation
+# z1 = 0.5 * np.log((1 + pearson_r) / (1 - pearson_r))
+# z2 = 0.5 * np.log((1 + pc_mod) / (1 - pc_mod))
+# # Number of samples
+# n1 = len(wt_mod.time)
+# n2 = len(wt_mod.time)
+# # Standard errors
+# se1 = 1 / np.sqrt(n1 - 3)
+# se2 = 1 / np.sqrt(n2 - 3)
+# # Standard error of the difference between correlations
+# sed = np.sqrt(se1**2 + se2**2)
+# # Calculate z-score for the difference
+# z_diff = (z1 - z2) / sed
+# # Compute p-value
+# p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
+
+p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
+rpc_sigind = p_value_rpc < 1-test_level/100
+rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_of_diff_modelled_vs_observed_pc')
 
 # #get critical values for the RPC following the supplementary material available from Eade et al. 2014, doi:10.1002/2014GL061146, available at https://agupubs.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1002%2F2014GL061146&file=Eade_070714_AUXILIARY_MATERIAL.pdf
 # rpc = get_rpc(wt_mod,wt_mod_mean,pearson_r)
@@ -415,9 +412,9 @@ rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_d
 #and plot the results
 for lwt in np.arange(len(tarwts_name)):
     for sea in np.arange(len(seasons)):
-        #obs_seas = wt_obs.sel(lwt=tarwts_name[lwt],season=seasons[sea])
         for en in np.arange(len(experiment_out)):
-            #get correlation measueres for the specific LWT, season and experiment
+            ## Correlation coefficient #################################
+            #get correlation measures for the specific LWT, season and experiment
             spearman_r_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             spearman_pval_step = spearman_pval.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             
@@ -441,8 +438,38 @@ for lwt in np.arange(len(tarwts_name)):
             savename_sh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
             get_map_lowfreq_var(np.transpose(spearman_r_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
             get_map_lowfreq_var(np.transpose(spearman_r_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
+            del(sig_ind_nh,sig_ind_sh) #is maintained to be plotted on top of the correlation differences below
+            
+            ## Difference in correlation coefficient ###################
+            #get differenced in the correlation coefficient dcppA minus historical
+            spearman_r_dcppa_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            spearman_r_historical_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment='historical')
+            spearman_r_diff_step = (spearman_r_dcppa_step - spearman_r_historical_step).rename('spearman_r_'+experiment_out[en]+'_minus historical')
+            p_value_spearman_r_diff_step = pvalue_correlation_diff(spearman_r_dcppa_step, spearman_r_historical_step, len(wt_mod.time), len(wt_mod.time)) #get p-value for the difference in the correlation coefficient
+            
+            #plot nh and sh separately
+            spearman_r_diff_nh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat >= 0)
+            spearman_r_diff_sh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat < 0)
+            p_value_spearman_r_diff_nh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat >= 0)
+            p_value_spearman_r_diff_sh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat < 0)
+            sig_ind_nh = p_value_spearman_r_diff_nh.values < 1-test_level/100
+            sig_ind_sh = p_value_spearman_r_diff_sh.values < 1-test_level/100
+            xx_nh, yy_nh = np.meshgrid(spearman_r_diff_nh.lon.values,spearman_r_diff_nh.lat.values)
+            xx_sh, yy_sh = np.meshgrid(spearman_r_diff_sh.lon.values,spearman_r_diff_sh.lat.values)
+            
+            title = 'Diff. in corr. coeff. '+experiment_out[en]+' minus historical, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+str(taryears[0])+', '+str(taryears[1])
+            savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/correlation/maps'
+            if os.path.isdir(savedir) != True:
+                os.makedirs(savedir)
+            halfres = (lat.values[1]-lat.values[0])/2
+            cbarlabel_spear_diff = 'Difference in rank correlation coefficient'
+            savename_nh = savedir+'/diff_spearman_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/diff_spearman_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            get_map_lowfreq_var(np.transpose(spearman_r_diff_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
+            get_map_lowfreq_var(np.transpose(spearman_r_diff_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh)
             
+            ## RPC #####################################################
             #get RPC measures for the specific LWT, season and experiment
             rpc_step = rpc.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             rpc_sigind_step = rpc_sigind.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
@@ -469,6 +496,7 @@ for lwt in np.arange(len(tarwts_name)):
             get_map_lowfreq_var(np.transpose(rpc_sh.values),xx_sh,yy_sh,0,2,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_rpc,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh)           
             
+            ## SNR ratio ###############################################
             #get temporal mean snr ratios for the specific LWT, season and experiment from dcppa and historical and then calculate the ratio dcppa / historical
             snr_dcppa_step = np.abs(wt_mod_snr.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])).mean(dim='time')
             snr_hist_step = np.abs(wt_mod_snr.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment='historical')).mean(dim='time')
@@ -499,6 +527,7 @@ for lwt in np.arange(len(tarwts_name)):
             get_map_lowfreq_var(np.transpose(snr_ratio_sh.values),xx_sh,yy_sh,0,2,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_snr,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh)
             
+            ## NOISE term ##############################################
             #map temporal mean noise term for the specific LWT, season and experiment, the temporal mean has been already calculated above, outside the current loop
             noise_step = wt_mod_noise_tmean.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             title = 'Temporal-mean noise term for '+experiment_out[en]+' dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+str(taryears[0])+', '+str(taryears[1])
@@ -508,6 +537,7 @@ for lwt in np.arange(len(tarwts_name)):
             savename_sh = savedir+'/noise_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
             map_polar_single_field(noise_step,title,savename_nh,savename_sh,wt_mod_noise_tmean.min(),wt_mod_noise_tmean.max(),dpival,colormap,titlesize,cbarlabel_noise)
             
+            ## SIGNAL TERM #############################################
             #map temporal mean signal term for the specific LWT, season and experiment, the temporal mean has been already calculated above, outside the current loop
             signal_step = wt_mod_signal_tmean.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             cbarlabel_signal = 'Temporal-mean absolute signal'
@@ -538,6 +568,13 @@ for lwt in np.arange(len(tarwts_name)):
             spearman_r_nh.close()
             spearman_r_sh.close()
             spearman_r_step.close()
+            spearman_r_dcppa_step.close()
+            spearman_r_diff_step.close()
+            p_value_spearman_r_diff_step.close()
+            spearman_r_diff_nh.close()
+            spearman_r_diff_sh.close()
+            p_value_spearman_r_diff_nh.close()
+            p_value_spearman_r_diff_sh.close()
             snr_ratio_nh.close()
             snr_ratio_sh.close()
             snr_dcppa_nh.close()
@@ -549,57 +586,63 @@ spearman_r_nh = spearman_r.isel(lat=spearman_r.lat >= 0)
 spearman_r_sh = spearman_r.isel(lat=spearman_r.lat < 0)
 spearman_pval_nh = spearman_pval.isel(lat=spearman_pval.lat >= 0)
 spearman_pval_sh = spearman_pval.isel(lat=spearman_pval.lat < 0)
+rpc_nh = rpc.isel(lat=rpc.lat >= 0)
+rpc_sh = rpc.isel(lat=rpc.lat < 0)
 boxplot_xticks = np.arange(len(tarwts_name))
+
 #get critical values for the correlation coefficient with a two-tailed test
 df = len(wt_mod.time)- 2 #Degrees of freedom (assuming n > 30, approximately)
 alpha = (100 - test_level)/100
 critical_value = t.ppf(1 - alpha / 2, df) #calculate the critical value
+critical_value = z2r(critical_value) #transforms z-score to correlation coefficient using the inverse Fisher transformation
+wtlabel2save = str(tarwts_name).replace('[','').replace(']','').replace("'",'').replace(', ','_')
 
+#draw all LWTs for a given season and experiment in a single boxplot for currently 1) the correlation coefficient and 2) the RPC in the innermost loop
 #loop through seasons
 for sea in np.arange(len(seasons)):
     #loop through experiments
     for en in np.arange(len(experiment_out)):
-        savedir = figs+'/'+experiment[en]+'/global/summary/correlation/boxplots'
-        wtlabel2save = str(tarwts_name).replace('[','').replace(']','').replace("'",'').replace(', ','_')
-        if os.path.isdir(savedir) != True:
-            os.makedirs(savedir)
-        #get dcppa and historical (i.e. reference) results and stack lon and lat to new <gridpoint> dimension
+        savedir_correlation = figs+'/'+experiment[en]+'/global/summary/correlation/boxplots'
+        if os.path.isdir(savedir_correlation) != True:
+            os.makedirs(savedir_correlation)
+        
+        #get temporal correlation coefficients with observations (hindcast skill) separately for each experiment and stack lon and lat to new <gridpoint> dimension
         spearman_r_nh_step = spearman_r_nh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
         spearman_r_sh_step = spearman_r_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        #then plot
+        savename_nh = savedir_correlation+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(spearman_r_nh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        savename_sh = savedir_correlation+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(spearman_r_sh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_sh,dpival,-1,1,critval_f=rho_critval)
+        #get difference between the temporal correlation coefficients of the candidate experiment and the historical experiment used as reference and stack lon and lat to new <gridpoint> dimension
+        spearman_r_nh_step_diff = spearman_r_nh_step - spearman_r_nh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
+        spearman_r_sh_step_diff = spearman_r_sh_step - spearman_r_sh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
+        #then plot
+        savename_nh = savedir_correlation+'/boxplot_spearman_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(spearman_r_nh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        savename_sh = savedir_correlation+'/boxplot_spearman_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(spearman_r_sh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_sh,dpival,-1,1,critval_f=rho_critval)
 
-        savename_nh = savedir+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        fig = plt.figure()
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[0,0],linestyle='dotted',color='black',zorder=1)
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[rho_critval,rho_critval],linestyle='dotted',color='red',zorder=1)
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[rho_critval*-1,rho_critval*-1],linestyle='dotted',color='red',zorder=1)
-        sns.boxplot(data=spearman_r_nh_step.transpose('gridpoints','lwt'))
-        plt.xticks(ticks=boxplot_xticks,labels=tarwts_name)
-        plt.xlabel('Lamb Weather Type')
-        plt.ylim([np.abs(spearman_r).max()*-1,np.abs(spearman_r).max()]) #y axis is centred around 0
-        plt.ylabel(cbarlabel_spear)
-        #plt.grid(axis='y',linestyle='dotted')
-        plt.savefig(savename_nh,dpi=dpival)
-        plt.close('all')
-        del(fig)
-
-        savename_sh = savedir+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        fig = plt.figure()
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[0,0],linestyle='dotted',color='black')
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[rho_critval,rho_critval],linestyle='dotted',color='red')
-        plt.plot([-0.5,boxplot_xticks[-1]+0.5],[rho_critval*-1,rho_critval*-1],linestyle='dotted',color='red')
-        sns.boxplot(data=spearman_r_sh_step.transpose('gridpoints','lwt'))
-        plt.xticks(ticks=boxplot_xticks,labels=tarwts_name)
-        plt.xlabel('Lamb Weather Type')
-        plt.ylim([np.abs(spearman_r).max()*-1,np.abs(spearman_r).max()]) #y axis is centred around 0
-        plt.ylabel(cbarlabel_spear)
-        #plt.grid(axis='y',linestyle='dotted')
-        plt.savefig(savename_sh,dpi=dpival)
-        plt.close('all')
-        del(fig)
-        
-        #clean temporary xr data arrays
+        #and clean
         spearman_r_nh_step.close()
         spearman_r_sh_step.close()
+        spearman_r_nh_step_diff.close()
+        spearman_r_sh_step_diff.close()
+
+        #get Ratio of Predictable Components separately for each experiment and stack lon and lat to new <gridpoint> dimension
+        savedir_rpc = figs+'/'+experiment[en]+'/global/summary/rpc/boxplots'
+        if os.path.isdir(savedir_rpc) != True:
+            os.makedirs(savedir_rpc)
+        rpc_nh_step = rpc_nh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        rpc_sh_step = rpc_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        #then plot
+        savename_nh = savedir_rpc+'/boxplot_rpc_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rpc_nh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_nh,dpival,rpc.min(),rpc.max(),critval_f=1)
+        savename_sh = savedir_rpc+'/boxplot_rpc_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rpc_sh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_sh,dpival,rpc.min(),rpc.max(),critval_f=1)
+        #and clean
+        rpc_nh_step.close()
+        rpc_sh_step.close()
 
 #clean remaining xarray objects
 wt_mod_noise_tmean.close()
