@@ -66,7 +66,7 @@ meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
 rho_ref = '20c_era5' #20c_era5 or 20c_cera20c; reference observational dataset used to calculate correlations. Must be included in the <experiment_out> input parameter defined above
 detrending = 'yes' #remove linear trend from LWT count time series, yes or no
-test_level = 90 #test level in %, following the nomenclature used in Wilks 2006; used to obtaine the critical values for the RPC
+test_level = 95 #test level in %, following the nomenclature used in Wilks 2006; used to obtaine the critical values for the RPC
 repetitions = 100 #number of repetitions used for Monte-Carlo significance testing
 anom = 'yes' #yes or no; calculate correlation measures and RPC on anomalies or raw values, respectively
 exclude_members = 3 #number of members to be excluded for Monte-Carlo significance testing
@@ -344,6 +344,7 @@ spearman_pval_effn = xs.spearman_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',ski
 
 # get rpc from function according to Eade et al. 2014, doi:10.1002/2014GL061146, equation 1 and Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4, equation 5
 rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach='Eade') #rpc is the ratio of predictable componentes and pc_mod the modelled preditable component, pearson_r is the observed predictable component
+# rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r.where(pearson_r >= 0, other = 0),approach='Eade')
 
 # #test the significane of the difference between the observed and modelled predictable components, interpreted as two correlation coefficients
 # # Fisher z transformation
@@ -363,7 +364,7 @@ rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach='Eade') #rpc is the r
 # p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
 
 p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
-rpc_sigind = p_value_rpc < 1-test_level/100
+rpc_sigind = p_value_rpc < (1-test_level/100)
 rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_of_diff_modelled_vs_observed_pc')
 
 # #get critical values for the RPC following the supplementary material available from Eade et al. 2014, doi:10.1002/2014GL061146, available at https://agupubs.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1002%2F2014GL061146&file=Eade_070714_AUXILIARY_MATERIAL.pdf
@@ -438,7 +439,7 @@ for lwt in np.arange(len(tarwts_name)):
             savename_sh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
             get_map_lowfreq_var(np.transpose(spearman_r_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
             get_map_lowfreq_var(np.transpose(spearman_r_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
-            del(sig_ind_nh,sig_ind_sh) #is maintained to be plotted on top of the correlation differences below
+            del(sig_ind_nh,sig_ind_sh) #can be maintained to be plotted on top of the correlation differences below
             
             ## Difference in correlation coefficient ###################
             #get differenced in the correlation coefficient dcppA minus historical
@@ -450,10 +451,10 @@ for lwt in np.arange(len(tarwts_name)):
             #plot nh and sh separately
             spearman_r_diff_nh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat >= 0)
             spearman_r_diff_sh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat < 0)
-            p_value_spearman_r_diff_nh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat >= 0)
-            p_value_spearman_r_diff_sh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat < 0)
-            sig_ind_nh = p_value_spearman_r_diff_nh.values < 1-test_level/100
-            sig_ind_sh = p_value_spearman_r_diff_sh.values < 1-test_level/100
+            p_value_spearman_r_diff_nh = p_value_spearman_r_diff_step.isel(lat=p_value_spearman_r_diff_step.lat >= 0)
+            p_value_spearman_r_diff_sh = p_value_spearman_r_diff_step.isel(lat=p_value_spearman_r_diff_step.lat < 0)
+            sig_ind_nh = p_value_spearman_r_diff_nh.values < (1-test_level/100)
+            sig_ind_sh = p_value_spearman_r_diff_sh.values < (1-test_level/100)
             xx_nh, yy_nh = np.meshgrid(spearman_r_diff_nh.lon.values,spearman_r_diff_nh.lat.values)
             xx_sh, yy_sh = np.meshgrid(spearman_r_diff_sh.lon.values,spearman_r_diff_sh.lat.values)
             

@@ -879,17 +879,25 @@ def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,approach='Eade'):
 
 def pvalue_correlation_diff(pearson1, pearson2, n1, n2):
     '''caclulates the p-value for the difference in the correlation coefficients contained in the xarray DataArrays <pearson1> and <pearson2> 
-    caclculated upon the sample sizes <n1> and <n2>, respectively, both being either numpy arrays, floats or integers; <pearson1> and <pearson2> must have the same dimensions'''
+    caclculated upon the sample sizes <n1> and <n2>, respectively, both being either numpy arrays, floats or integers; <pearson1> and <pearson2> must have the same dimensions;
+    see https://stats.stackexchange.com/questions/278751/how-do-i-determine-whether-two-correlations-are-significantly-different'''
     # Fisher z transformation
     z1 = 0.5 * np.log((1 + pearson1) / (1 - pearson1))
     z2 = 0.5 * np.log((1 + pearson2) / (1 - pearson2))
-    # Standard errors
-    se1 = 1 / np.sqrt(n1 - 3)
-    se2 = 1 / np.sqrt(n2 - 3)
+    # # or equivalently
+    # z1 = np.arctanh(pearson1)
+    # z2 = np.arctanh(pearson2)
+    
+    ##this is proposed by chatgpt
+    # se1 = 1 / np.sqrt(n1 - 3)
+    # se2 = 1 / np.sqrt(n2 - 3)
+    # sed = np.sqrt(se1**2 + se2**2)
+    
+    ##this is proposed at https://stats.stackexchange.com/questions/278751/how-do-i-determine-whether-two-correlations-are-significantly-different
     # Standard error of the difference between correlations
-    sed = np.sqrt(se1**2 + se2**2)
+    se_diff = np.sqrt(1 / (n1 - 3) + 1 / (n2 - 3))
     # Calculate z-score for the difference
-    z_diff = (z1 - z2) / sed
+    z_diff = (z1 - z2) / se_diff
     # Compute p-value
     p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
     p_value = xr.DataArray(p_value,coords=pearson1.coords,dims=pearson1.dims,name='p_value')
@@ -923,4 +931,17 @@ def z2r(z_f):
     '''back-transformation of z-values provided in <z_f> to the Pearson correlation coefficient returned in <r_f> following Schönwiese 2006, page 178'''
     r_f = (np.exp(z_f)-np.exp(z_f*-1)) / (np.exp(z_f)+np.exp(z_f*-1))
     return(r_f)
+
+def fisher_z_transform(r):
+    '''performs a z-transformation of the Pearson correlation coefficient'''
+    return(np.arctanh(r))
+
+def z_test(r1, r2, n1, n2):
+    '''performs a z-test '''
+    z1 = fisher_z_transform(r1)
+    z2 = fisher_z_transform(r2)
+    se_diff = np.sqrt(1 / (n1 - 3) + 1 / (n2 - 3))
+    z_diff = (z1 - z2) / se_diff
+    p_value = 2 * (1 - norm.cdf(np.abs(z_diff))) # assuming a two-tailed test
+    return(z_diff, p_value)
 
