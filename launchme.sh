@@ -6,7 +6,7 @@
 source ${HOME}/.bashrc
 
 #input parameters
-mode='makecalcs' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse',get_csd_local or 'map_lowfreq_var'
+mode='decadal_skill_maps' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse',get_csd_local or 'map_lowfreq_var'
 
 #check python version
 echo "Your Python version is:"
@@ -31,6 +31,9 @@ then
 elif [ ${mode} = 'get_csd_local' ]
 then
 	python get_csd_local.py > ${LOGDIR}/get_csd_local.log
+elif [ ${mode} = 'decadal_skill_maps' ]
+then
+	python skill_maps_from_mon_counts.py > ${LOGDIR}/skill_maps_from_mon_counts.log
 else
 	echo 'Unknown entry mode=${mode}, exiting now....'
 fi

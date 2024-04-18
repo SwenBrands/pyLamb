@@ -772,15 +772,15 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
         pointsize_f = 0.25
         marker_f = '+'
     else:
-        pointsize_f = 0.25
-        marker_f = 'o'
+        pointsize_f = 1 #0.25
+        marker_f = '.' #o
     
     if agree_ind is None:
         print('No <agree_ind> was found by get_map_lowfreq_var() function !')
     else:
         toplayer_x = xx_f.flatten()[agree_ind.flatten()]
         toplayer_y = yy_f.flatten()[agree_ind.flatten()]
-        ax.plot(toplayer_x, toplayer_y, color='white', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
         #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
     if origpoint is None:
         print('No <origpoint> was found by get_map_lowfreq_var() function !')
@@ -853,14 +853,14 @@ def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,approach='Eade'):
         var_sig_f = xr_mod_mean_f.var(dim='time') #calculate the variance of the ensemble-mean time series
         var_tot_f = xr_mod_f.var(dim='time').mean(dim='run_index') #calculates the mean of the individual members' variance
         pc_mod_f = np.sqrt(var_sig_f / var_tot_f) #modelled predictable component, equivalent to perfect skill or potential skill
-        rpc_f = xr_pearson_r_f / pc_mod_f #calculate the RPC
+        rpc_f = (xr_pearson_r_f / pc_mod_f).rename('rpc_eade') #calculate the RPC
         var_sig_f.close()
         var_tot_f.close()
         del(var_sig_f,var_tot_f)
     elif approach == 'Scaife':
         ##Scaife et al. 2018, equation 5 working with correlation coefficient
         pc_mod_f = xs.pearson_r(xr_mod_f,xr_mod_mean_f,dim='time',skipna=True).rename('pearson_r').mean(dim='run_index') #calculate the correlation coefficient between the multi-model mean and each member and take the mean along all members obtaining the modelled predictable component
-        rpc_f = np.sqrt(xr_pearson_r_f**2 / pc_mod_f**2).rename('rpc') #calculate the RPC
+        rpc_f = np.sqrt(xr_pearson_r_f**2 / pc_mod_f**2).rename('rpc_scaife') #calculate the RPC
     # elif approach == 'Scaife_expvar'
         # ## RPC calculated with mean explained variance
         # expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
@@ -887,13 +887,7 @@ def pvalue_correlation_diff(pearson1, pearson2, n1, n2):
     # # or equivalently
     # z1 = np.arctanh(pearson1)
     # z2 = np.arctanh(pearson2)
-    
-    ##this is proposed by chatgpt
-    # se1 = 1 / np.sqrt(n1 - 3)
-    # se2 = 1 / np.sqrt(n2 - 3)
-    # sed = np.sqrt(se1**2 + se2**2)
-    
-    ##this is proposed at https://stats.stackexchange.com/questions/278751/how-do-i-determine-whether-two-correlations-are-significantly-different
+
     # Standard error of the difference between correlations
     se_diff = np.sqrt(1 / (n1 - 3) + 1 / (n2 - 3))
     # Calculate z-score for the difference

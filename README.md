@@ -52,3 +52,10 @@ Within these scripts, a large number of input parameters can be set
 that are commented to understand their meaning or purpose. This is
 followed by a line stating "EXECUTE" from where on no futher user
 options appear, i.e. the script is run with the parameters set before.
+
+
+Credits
+-------
+This ongoing research work is being funded by the Ministry for Ecological Transition and Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
+
+![alt text](https://pti-clima.csic.es/wp-content/uploads/2023/11/Web-Gob-Min-CSIC-COLOR-LOGO-PNG-RGB-300pppCLIMA.png)

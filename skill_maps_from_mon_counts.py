@@ -39,17 +39,17 @@ reference_period = [1970,2014] # "from_data" or list containing the start and en
 # seasons = ['ONDJFM','AMJJAS','DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
 # months = [[10,11,12,1,2,3],[4,5,6,7,8,9],[12,1,2],[1,2,3]] #list of months corresponding to each season
 
-# seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-# months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
+seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
 
-seasons = ['ONDJFM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-months = [[10,11,12,1,2,3]] #list of months corresponding to each season
+# seasons = ['ONDJFM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[10,11,12,1,2,3]] #list of months corresponding to each season
 
-# tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
-# tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
+tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
+tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
 
-tarwts = [['PA'],['DANE','PDNE','DCNE']] #original names for 11 types
-tarwts_name = ['PA','NE'] #summarized names for 11 types
+# tarwts = [['PA'],['DANE','PDNE','DCNE']] #original names for 11 types
+# tarwts_name = ['PA','NE'] #summarized names for 11 types
 
 # tarwts = [['PA']] #original names for 11 types
 # tarwts_name = ['PA'] #summarized names for 11 types
@@ -61,6 +61,8 @@ store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2'
 rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
 
 #set options for statistical analysis
+correlation_type = 'Pearson' #Pearson or Spearman, type of correlation coefficient to be calculated below; note that most of the applied significance tests are only valid for the Pearson correlation coefficient, strictly speaking.
+rpc_method = 'Eade' #Scaife or Eade; Scaife: predictable component in observations (first term) based on explained variance, i.e. negative correlation coefficients contribute the same as positive values to the RPC; Eade, prectiable component based on observations based on correlation coeffcient
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
@@ -324,12 +326,26 @@ wt_mod_mean_mem = xr.DataArray(wt_mod_mean_mem.transpose('lwt','season','experim
 # wt_mod_mean_mem = wt_mod_mean_mem.transpose('lwt','season','experiment','run_index','time','lon','lat') #reorder dimensions
 
 #calculate correlation measures between the ensemble-mean (i.e. the signal) and observations
+#for the Pearson correlation coefficient
 pearson_r = xs.pearson_r(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_r')
 pearson_pval = xs.pearson_r_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_pval')
 pearson_pval_effn = xs.pearson_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('pearson_pval_effn')
+#for the Spearman correlation coefficient
 spearman_r = xs.spearman_r(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_r')
 spearman_pval = xs.spearman_r_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval')
 spearman_pval_effn = xs.spearman_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',skipna=True).rename('spearman_pval_effn')
+    
+#Then decide with which the hindcast skill will be caculated; note that for RPC the Pearson correlation coefficient is used in any case.
+if correlation_type == "Pearson":
+    rho = pearson_r
+    rho_pval = pearson_pval
+    rho_pval_effn = pearson_pval_effn
+elif correlation_type == 'Spearman':
+    rho = spearman_r
+    rho_pval = spearman_pval
+    rho_pval_effn = spearman_pval_effn
+else:
+    raise Exception('ERROR: check entry for <correlation_type> input parameter !')
 
 # ## RPC calculated with ensemble mean and total variance following Eade et al. 2014, see equation 1 in doi:10.1002/2014GL061146
 # var_sig = wt_mod_mean.var(dim='time') #calculate the variance of the ensemble-mean time series
@@ -343,27 +359,16 @@ spearman_pval_effn = xs.spearman_r_eff_p_value(wt_obs,wt_mod_mean,dim='time',ski
 # rpc_expvar = np.sqrt(pearson_r**2 / pc_mod**2).rename('rpc_based_on_explained_var') #calculate the RPC based on explained variance
 
 # get rpc from function according to Eade et al. 2014, doi:10.1002/2014GL061146, equation 1 and Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4, equation 5
-rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach='Eade') #rpc is the ratio of predictable componentes and pc_mod the modelled preditable component, pearson_r is the observed predictable component
+rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach=rpc_method) #rpc is the ratio of predictable componentes and pc_mod the modelled preditable component, pearson_r is the observed predictable component
 # rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r.where(pearson_r >= 0, other = 0),approach='Eade')
 
-# #test the significane of the difference between the observed and modelled predictable components, interpreted as two correlation coefficients
-# # Fisher z transformation
-# z1 = 0.5 * np.log((1 + pearson_r) / (1 - pearson_r))
-# z2 = 0.5 * np.log((1 + pc_mod) / (1 - pc_mod))
-# # Number of samples
-# n1 = len(wt_mod.time)
-# n2 = len(wt_mod.time)
-# # Standard errors
-# se1 = 1 / np.sqrt(n1 - 3)
-# se2 = 1 / np.sqrt(n2 - 3)
-# # Standard error of the difference between correlations
-# sed = np.sqrt(se1**2 + se2**2)
-# # Calculate z-score for the difference
-# z_diff = (z1 - z2) / sed
-# # Compute p-value
-# p_value = 2 * (1 - norm.cdf(np.abs(z_diff)))
-
-p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
+#get pvalues for the rpc and the corresponding boolean (True / False) significance mask
+if rpc_method == 'Eade':
+    p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
+elif rpc_method == 'Scaife':
+    p_value_rpc = pvalue_correlation_diff(np.sqrt(pearson_r), np.sqrt(pc_mod), len(wt_mod.time), len(wt_mod.time))
+else:
+    raise Exception('ERROR: check entry for <rpc_method> input parameter !')
 rpc_sigind = p_value_rpc < (1-test_level/100)
 rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_of_diff_modelled_vs_observed_pc')
 
@@ -416,58 +421,58 @@ for lwt in np.arange(len(tarwts_name)):
         for en in np.arange(len(experiment_out)):
             ## Correlation coefficient #################################
             #get correlation measures for the specific LWT, season and experiment
-            spearman_r_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
-            spearman_pval_step = spearman_pval.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            rho_step = rho.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            rho_pval_step = rho_pval.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
             
             #plot nh and sh separately
-            spearman_r_nh = spearman_r_step.isel(lat=spearman_r_step.lat >= 0)
-            spearman_r_sh = spearman_r_step.isel(lat=spearman_r_step.lat < 0)
-            spearman_pval_nh = spearman_pval_step.isel(lat=spearman_pval_step.lat >= 0)
-            spearman_pval_sh = spearman_pval_step.isel(lat=spearman_pval_step.lat < 0)
-            sig_ind_nh = (spearman_pval_nh.values < 0.05) & (spearman_r_nh.values > 0)
-            sig_ind_sh = (spearman_pval_sh.values < 0.05) & (spearman_r_sh.values > 0)
-            xx_nh, yy_nh = np.meshgrid(spearman_r_nh.lon.values,spearman_r_nh.lat.values)
-            xx_sh, yy_sh = np.meshgrid(spearman_r_sh.lon.values,spearman_r_sh.lat.values)
+            rho_nh = rho_step.isel(lat=rho_step.lat >= 0)
+            rho_sh = rho_step.isel(lat=rho_step.lat < 0)
+            rho_pval_nh = rho_pval_step.isel(lat=rho_pval_step.lat >= 0)
+            rho_pval_sh = rho_pval_step.isel(lat=rho_pval_step.lat < 0)
+            sig_ind_nh = (rho_pval_nh.values < 0.05) & (rho_nh.values > 0)
+            sig_ind_sh = (rho_pval_sh.values < 0.05) & (rho_sh.values > 0)
+            xx_nh, yy_nh = np.meshgrid(rho_nh.lon.values,rho_nh.lat.values)
+            xx_sh, yy_sh = np.meshgrid(rho_sh.lon.values,rho_sh.lat.values)
             
-            title = 'Rank corr. coeff., dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+experiment_out[en]+' vs '+obs.upper()+', '+str(taryears[0])+', '+str(taryears[1])
+            title = correlation_type+' corrcoeff, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+experiment_out[en]+' vs '+obs.upper()+', '+str(taryears[0])+', '+str(taryears[1])
             savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/correlation/maps'
             if os.path.isdir(savedir) != True:
                 os.makedirs(savedir)
             halfres = (lat.values[1]-lat.values[0])/2
-            cbarlabel_spear = 'Rank correlation coefficient'
-            savename_nh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            savename_sh = savedir+'/spearman_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            get_map_lowfreq_var(np.transpose(spearman_r_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
-            get_map_lowfreq_var(np.transpose(spearman_r_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
+            cbarlabel_spear = correlation_type+' correlation coefficient'
+            savename_nh = savedir+'/'+correlation_type.lower()+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/'+correlation_type.lower()+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            get_map_lowfreq_var(np.transpose(rho_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
+            get_map_lowfreq_var(np.transpose(rho_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh) #can be maintained to be plotted on top of the correlation differences below
             
             ## Difference in correlation coefficient ###################
             #get differenced in the correlation coefficient dcppA minus historical
-            spearman_r_dcppa_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
-            spearman_r_historical_step = spearman_r.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment='historical')
-            spearman_r_diff_step = (spearman_r_dcppa_step - spearman_r_historical_step).rename('spearman_r_'+experiment_out[en]+'_minus historical')
-            p_value_spearman_r_diff_step = pvalue_correlation_diff(spearman_r_dcppa_step, spearman_r_historical_step, len(wt_mod.time), len(wt_mod.time)) #get p-value for the difference in the correlation coefficient
+            rho_dcppa_step = rho.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment=experiment_out[en])
+            rho_historical_step = rho.sel(lwt=tarwts_name[lwt],season=seasons[sea],experiment='historical')
+            rho_diff_step = (rho_dcppa_step - rho_historical_step).rename(correlation_type+'_corrcoeff_'+experiment_out[en]+'_minus historical')
+            p_value_rho_diff_step = pvalue_correlation_diff(rho_dcppa_step, rho_historical_step, len(wt_mod.time), len(wt_mod.time)) #get p-value for the difference in the correlation coefficient
             
             #plot nh and sh separately
-            spearman_r_diff_nh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat >= 0)
-            spearman_r_diff_sh = spearman_r_diff_step.isel(lat=spearman_r_diff_step.lat < 0)
-            p_value_spearman_r_diff_nh = p_value_spearman_r_diff_step.isel(lat=p_value_spearman_r_diff_step.lat >= 0)
-            p_value_spearman_r_diff_sh = p_value_spearman_r_diff_step.isel(lat=p_value_spearman_r_diff_step.lat < 0)
-            sig_ind_nh = p_value_spearman_r_diff_nh.values < (1-test_level/100)
-            sig_ind_sh = p_value_spearman_r_diff_sh.values < (1-test_level/100)
-            xx_nh, yy_nh = np.meshgrid(spearman_r_diff_nh.lon.values,spearman_r_diff_nh.lat.values)
-            xx_sh, yy_sh = np.meshgrid(spearman_r_diff_sh.lon.values,spearman_r_diff_sh.lat.values)
+            rho_diff_nh = rho_diff_step.isel(lat=rho_diff_step.lat >= 0)
+            rho_diff_sh = rho_diff_step.isel(lat=rho_diff_step.lat < 0)
+            p_value_rho_diff_nh = p_value_rho_diff_step.isel(lat=p_value_rho_diff_step.lat >= 0)
+            p_value_rho_diff_sh = p_value_rho_diff_step.isel(lat=p_value_rho_diff_step.lat < 0)
+            sig_ind_nh = p_value_rho_diff_nh.values < (1-test_level/100)
+            sig_ind_sh = p_value_rho_diff_sh.values < (1-test_level/100)
+            xx_nh, yy_nh = np.meshgrid(rho_diff_nh.lon.values,rho_diff_nh.lat.values)
+            xx_sh, yy_sh = np.meshgrid(rho_diff_sh.lon.values,rho_diff_sh.lat.values)
             
-            title = 'Diff. in corr. coeff. '+experiment_out[en]+' minus historical, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+str(taryears[0])+', '+str(taryears[1])
+            title = 'Corrcoeff '+experiment_out[en]+' minus historical, dtr'+detrending+', '+tarwts_name[lwt]+', '+seasons[sea]+', '+str(taryears[0])+', '+str(taryears[1])
             savedir = figs+'/'+experiment[en]+'/global/'+tarwts_name[lwt]+'/correlation/maps'
             if os.path.isdir(savedir) != True:
                 os.makedirs(savedir)
             halfres = (lat.values[1]-lat.values[0])/2
-            cbarlabel_spear_diff = 'Difference in rank correlation coefficient'
-            savename_nh = savedir+'/diff_spearman_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            savename_sh = savedir+'/diff_spearman_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            get_map_lowfreq_var(np.transpose(spearman_r_diff_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
-            get_map_lowfreq_var(np.transpose(spearman_r_diff_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
+            cbarlabel_spear_diff = 'Difference in '+correlation_type+' corrcoeff'
+            savename_nh = savedir+'/diff_'+correlation_type.lower()+'_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/diff_'+correlation_type.lower()+'_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_historical_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            get_map_lowfreq_var(np.transpose(rho_diff_nh.values),xx_nh,yy_nh,-1,1,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
+            get_map_lowfreq_var(np.transpose(rho_diff_sh.values),xx_sh,yy_sh,-1,1,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_spear_diff,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh)
             
             ## RPC #####################################################
@@ -491,8 +496,8 @@ for lwt in np.arange(len(tarwts_name)):
                 os.makedirs(savedir)
             halfres = (lat.values[1]-lat.values[0])/2
             cbarlabel_rpc = 'Ratio of Predictable Components'
-            savename_nh = savedir+'/rpc_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-            savename_sh = savedir+'/rpc_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_nh = savedir+'/rpc_'+rpc_method+'_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+            savename_sh = savedir+'/rpc_'+rpc_method+'_anom_'+anom+'_dtr_'+detrending+'_'+tarwts_name[lwt]+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
             get_map_lowfreq_var(np.transpose(rpc_nh.values),xx_nh,yy_nh,0,2,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel_rpc,map_proj_nh,agree_ind=np.transpose(sig_ind_nh),origpoint=None)
             get_map_lowfreq_var(np.transpose(rpc_sh.values),xx_sh,yy_sh,0,2,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel_rpc,map_proj_sh,agree_ind=np.transpose(sig_ind_sh),origpoint=None)
             del(sig_ind_nh,sig_ind_sh)           
@@ -560,22 +565,22 @@ for lwt in np.arange(len(tarwts_name)):
             snr_dcppa_step.close()
             snr_hist_step.close()
             snr_ratio_step.close()
-            spearman_pval_step.close()
+            rho_pval_step.close()
             rpc_sigind_step.close()
             signal_step.close()
             noise_step.close()
-            spearman_pval_nh.close()
-            spearman_pval_sh.close()
-            spearman_r_nh.close()
-            spearman_r_sh.close()
-            spearman_r_step.close()
-            spearman_r_dcppa_step.close()
-            spearman_r_diff_step.close()
-            p_value_spearman_r_diff_step.close()
-            spearman_r_diff_nh.close()
-            spearman_r_diff_sh.close()
-            p_value_spearman_r_diff_nh.close()
-            p_value_spearman_r_diff_sh.close()
+            rho_pval_nh.close()
+            rho_pval_sh.close()
+            rho_nh.close()
+            rho_sh.close()
+            rho_step.close()
+            rho_dcppa_step.close()
+            rho_diff_step.close()
+            p_value_rho_diff_step.close()
+            rho_diff_nh.close()
+            rho_diff_sh.close()
+            p_value_rho_diff_nh.close()
+            p_value_rho_diff_sh.close()
             snr_ratio_nh.close()
             snr_ratio_sh.close()
             snr_dcppa_nh.close()
@@ -583,10 +588,10 @@ for lwt in np.arange(len(tarwts_name)):
 
 #make bar plots
 #get hemispheric-wise results
-spearman_r_nh = spearman_r.isel(lat=spearman_r.lat >= 0)
-spearman_r_sh = spearman_r.isel(lat=spearman_r.lat < 0)
-spearman_pval_nh = spearman_pval.isel(lat=spearman_pval.lat >= 0)
-spearman_pval_sh = spearman_pval.isel(lat=spearman_pval.lat < 0)
+rho_nh = rho.isel(lat=rho.lat >= 0)
+rho_sh = rho.isel(lat=rho.lat < 0)
+rho_pval_nh = rho_pval.isel(lat=rho_pval.lat >= 0)
+rho_pval_sh = rho_pval.isel(lat=rho_pval.lat < 0)
 rpc_nh = rpc.isel(lat=rpc.lat >= 0)
 rpc_sh = rpc.isel(lat=rpc.lat < 0)
 boxplot_xticks = np.arange(len(tarwts_name))
@@ -608,27 +613,27 @@ for sea in np.arange(len(seasons)):
             os.makedirs(savedir_correlation)
         
         #get temporal correlation coefficients with observations (hindcast skill) separately for each experiment and stack lon and lat to new <gridpoint> dimension
-        spearman_r_nh_step = spearman_r_nh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
-        spearman_r_sh_step = spearman_r_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        rho_nh_step = rho_nh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        rho_sh_step = rho_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
         #then plot
-        savename_nh = savedir_correlation+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(spearman_r_nh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_nh,dpival,-1,1,critval_f=rho_critval)
-        savename_sh = savedir_correlation+'/boxplot_spearman_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(spearman_r_sh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_sh,dpival,-1,1,critval_f=rho_critval)
+        savename_nh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rho_nh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        savename_sh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rho_sh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_sh,dpival,-1,1,critval_f=rho_critval)
         #get difference between the temporal correlation coefficients of the candidate experiment and the historical experiment used as reference and stack lon and lat to new <gridpoint> dimension
-        spearman_r_nh_step_diff = spearman_r_nh_step - spearman_r_nh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
-        spearman_r_sh_step_diff = spearman_r_sh_step - spearman_r_sh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
+        rho_nh_step_diff = rho_nh_step - rho_nh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
+        rho_sh_step_diff = rho_sh_step - rho_sh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
         #then plot
-        savename_nh = savedir_correlation+'/boxplot_spearman_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(spearman_r_nh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_nh,dpival,-1,1,critval_f=rho_critval)
-        savename_sh = savedir_correlation+'/boxplot_spearman_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(spearman_r_sh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_sh,dpival,-1,1,critval_f=rho_critval)
+        savename_nh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rho_nh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        savename_sh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rho_sh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_sh,dpival,-1,1,critval_f=rho_critval)
 
         #and clean
-        spearman_r_nh_step.close()
-        spearman_r_sh_step.close()
-        spearman_r_nh_step_diff.close()
-        spearman_r_sh_step_diff.close()
+        rho_nh_step.close()
+        rho_sh_step.close()
+        rho_nh_step_diff.close()
+        rho_sh_step_diff.close()
 
         #get Ratio of Predictable Components separately for each experiment and stack lon and lat to new <gridpoint> dimension
         savedir_rpc = figs+'/'+experiment[en]+'/global/summary/rpc/boxplots'
@@ -636,11 +641,18 @@ for sea in np.arange(len(seasons)):
             os.makedirs(savedir_rpc)
         rpc_nh_step = rpc_nh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
         rpc_sh_step = rpc_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
+        
         #then plot
-        savename_nh = savedir_rpc+'/boxplot_rpc_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rpc_nh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_nh,dpival,rpc.min(),rpc.max(),critval_f=1)
-        savename_sh = savedir_rpc+'/boxplot_rpc_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rpc_sh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_sh,dpival,rpc.min(),rpc.max(),critval_f=1)
+        if rpc_method == 'Scaife':
+            minval_rpc = -0.1
+        elif rpc_method == 'Eade':
+            minval_prc = rpc.min()
+        else:
+            raise Excecption('ERROR: check entry for <rpc_method> input parameter !')
+        savename_nh = savedir_rpc+'/boxplot_rpc_'+rpc_method+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rpc_nh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_nh,dpival,minval_rpc,rpc.max(),critval_f=1)
+        savename_sh = savedir_rpc+'/boxplot_rpc_'+rpc_method+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
+        draw_boxplot(rpc_sh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_sh,dpival,minval_rpc,rpc.max(),critval_f=1)
         #and clean
         rpc_nh_step.close()
         rpc_sh_step.close()
@@ -651,6 +663,9 @@ wt_obs.close()
 wt_obs_tmean.close()
 wt_obs_anom.close()
 wt_mod_mean_mem.close()
+rho.close()
+rho_pval.close()
+rho_pval_effn.close()
 pearson_r.close()
 pearson_pval.close()
 pearson_pval_effn.close()
