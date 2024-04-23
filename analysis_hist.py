@@ -42,15 +42,18 @@ home = os.getenv('HOME')
 filesystem = 'lustre' #set the filesystem in use, currently, extdisk or lustre
 experiment = 'historical'
 refdata = 'era5' #interim, jra55 or era5 reference reanlaysis dataset
-errortype = 'MAE' #error type to be computed, MAE, KL, TPMS, PERS or PERSall: Mean Absolute Error, Kullback-Leibler divergence, Transition Probability Matrix score (full matrix) or only diagonal thereof (PERS) or error in sum of the diagonal (PERSall) indicating probabilities of persistence.
+errortype = 'PERSall' #error type to be computed, MAE, KL, TPMS, PERS or PERSall: Mean Absolute Error, Kullback-Leibler divergence, Transition Probability Matrix score (full matrix) or only diagonal thereof (PERS) or error in sum of the diagonal (PERSall) indicating probabilities of persistence.
 timelag = 1 #lag for calculating transition probabilities, six-hourly time step i.e. 1 refers to a lag of six hours, 2 to 12 hours etc. (this is the time index)
-region = 'cordexna' #nh, sh, eurocordex, cordexna, escena, north_atlantic
-taryears = ['1979', '2005'] #start and end years as indicated in source nc file containing the LWT catalogues (hereafter: "source files")
-alt_taryears=['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
+region = 'escena' #nh, sh, eurocordex, cordexna, escena, north_atlantic
 tarpath = '/media/swen/ext_disk2/datos/lamb_cmip5/results_v2/6h' #path of the source files
 figpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs'
 auxpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/pyLamb/aux'
 figfolder = 'figs_ref'+refdata #name of the folder containing the output figures
+#set target years
+taryears = ['1979', '2005'] #start and end years as indicated in source nc file containing the LWT catalogues (hereafter: "source files"); this is the period the analyses are conducted for; currently coincides with the years available for cmip5
+taryears_cmip6 = ['1979', '2014']
+taryears_cmip6_long = ['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
+#set LWT classification options
 classes_needed = 27 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH
 minfreq = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 #set format and resolution of the output figures
@@ -127,8 +130,8 @@ if groupby == 'agcm':
     print('INFO: The GCMs are grouped according to their AGCM!')
     model = ['csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2','fgoals_g3','mpi_esm_lr','mpi_esm_mr','mpi_esm_1_2_lr','mpi_esm_1_2_hr','mpi_esm_1_2_ham','awi_esm_1_1_lr','nesm3','cmcc_cm','cmcc_cm2_sr5','cmcc_cm2_hr4','cmcc_esm2','ccsm4','noresm1_m','noresm2_lm','noresm2_mm','sam0_unicon','taiesm1','bcc_csm1_1','bcc_csm2_mr','cnrm_cm5','cnrm_cm6_1','cnrm_cm6_1_hr','cnrm_esm2_1','ec_earth','ec_earth3','ec_earth3_veg','ec_earth3_veg_lr','ec_earth3_aerchem','ec_earth3_cc','gfdl_cm3','gfdl_cm4','gfdl_esm2g','gfdl_esm4','kiost_esm','giss_e2_h','giss_e2_r','giss_e2_1_g','ipsl_cm5a_lr','ipsl_cm5a_mr','ipsl_cm6a_lr','miroc5','miroc6','miroc_es2l','miroc_esm','mri_esm1','mri_esm2_0','inm_cm4','inm_cm5','canesm2','iitm_esm'] #'iitm_esm'
     mylabels = ['CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2','FGOALS-g3','MPI-ESM-LR','MPI-ESM-MR','MPI-ESM1.2-LR','MPI-ESM1.2-HR','MPI-ESM-1-2-HAM','AWI-ESM-1-1-LR','NESM3','CMCC-CM','CMCC-CM2-SR5','CMCC-CM2-HR4','CMCC-ESM2','CCSM4','NorESM1-M','NorESM2-LM','NorESM2-MM','SAM0-UNICON','TaiESM1','BCC-CSM1.1','BCC-CSM2-MR','CNRM-CM5','CNRM-CM6-1','CNRM-CM6-1-HR','CNRM-ESM2-1','EC-Earth2.3','EC-Earth3','EC-Earth3-Veg','EC-Earth3-Veg-LR','EC-Earth3-AerChem','EC-Earth3-CC','GFDL-CM3','GFDL-CM4','GFDL-ESM2G','GFDL-ESM4','KIOST-ESM','GISS-E2-H','GISS-E2-R','GISS-E2.1-G','IPSL-CM5A-LR','IPSL-CM5A-MR','IPSL-CM6A-LR','MIROC5','MIROC6','MIROC-ES2L','MIROC-ESM','MRI-ESM1','MRI-ESM2.0','INM-CM4','INM-CM5','CanESM2','IITM-ESM'] #'IITM-ESM'
-    #model = ['csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2',]
-    #mylabels = ['CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2']
+    # model = ['csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2',]
+    # mylabels = ['CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2']
 elif groupby == 'ogcm':
     print('INFO: The GCMs are grouped according to tpython --versionheir OGCM!')
     model = ['gfdl_cm3','gfdl_cm4','gfdl_esm2g','gfdl_esm4','kiost_esm','csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','bcc_csm1_1','bcc_csm2_mr','kace_1_0_g','iitm_esm','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','mpi_esm_lr','mpi_esm_mr','mpi_esm_1_2_lr','mpi_esm_1_2_hr','mpi_esm_1_2_ham','cmcc_cm','cmcc_cm2_sr5','cmcc_cm2_hr4','cmcc_esm2','cnrm_cm5','cnrm_cm6_1','cnrm_cm6_1_hr','cnrm_esm2_1','ec_earth','ec_earth3','ec_earth3_veg','ec_earth3_veg_lr','ec_earth3_aerchem','ec_earth3_cc','ipsl_cm5a_lr','ipsl_cm5a_mr','ipsl_cm6a_lr','nesm3','awi_esm_1_1_lr','ccsm4','sam0_unicon','taiesm1','noresm1_m','noresm2_lm','noresm2_mm','fgoals_g2','fgoals_g3','giss_e2_h','giss_e2_r','giss_e2_1_g','miroc5','miroc6','miroc_esm','miroc_es2l','mri_esm1','mri_esm2_0','inm_cm4','inm_cm5','canesm2']
@@ -164,7 +167,7 @@ else:
 #set full path to ERA Interim and JRA-55 LWT catalogues used as reference for verification, remove conditional after recalculating NH catalogues
 obs_srcpath_interim = tarpath+'/historical/'+hemis+'/wtseries_interim_historical_r1i1p1_'+hemis+'_'+taryears[0]+'_'+taryears[1]+'.nc'
 obs_srcpath_jra55 = tarpath+'/historical/'+hemis+'/wtseries_jra55_historical_r1i1p1_'+hemis+'_'+taryears[0]+'_'+taryears[1]+'.nc'
-obs_srcpath_era5 = tarpath+'/historical/'+hemis+'/wtseries_era5_historical_r1i1p1_'+hemis+'_1979_2020.nc'
+obs_srcpath_era5 = tarpath+'/historical/'+hemis+'/wtseries_era5_historical_r1i1p1_'+hemis+'_1979_2022.nc'
 
 #initialize lists containing the metadata for each model, which is assigned below in <get_historical_metadata,py>
 exec(open('init_runs.py').read())
@@ -250,7 +253,10 @@ obs_dataset.close()
 wtcount = range(1,dim_wt+1)
 if errortype in ('TPMS','PERS','PERSall'):
     print('INFO: switching to tpms mode. Observed transition probabilities are loaded or calculated...')
-    savepath = tarpath+'/'+experiment[0]+'/transitions/'+region+'/trans_prob_'+refdata+'_'+region+'.nc'
+    savedir = tarpath+'/'+experiment[0]+'/transitions/'+region
+    if os.path.isdir(savedir) != True:
+        os.makedirs(savedir)    
+    savepath = savedir+'/trans_prob_'+refdata+'_'+region+'.nc'
     try:
         print('INFO: try loading transition probablities from '+savepath)
         nc = xr.open_dataset(savepath)
@@ -331,16 +337,27 @@ arr_error = np.zeros((dim_lon,dim_lat,len(model)))
 arr_mod_freq = np.zeros((dim_wt,dim_lon,dim_lat,len(model)))
 for mm in range(len(model)):
     print('Info: start validating '+model[mm]+' and '+mrun[mm])
-    #add exception for ERA5 since LWT catalogue ends in 2020
-    if model[mm] == 'era5':
-        print('INFO: LWT catalouge for ERA5 ends in 2020.')
-        mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_2020.nc'
-    #all other catalogues end in 2004
-    elif (model[mm] == 'ec_earth3_veg') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1')) or (model[mm] == 'mpi_esm_1_2_hr') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1')):
-        mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+alt_taryears[0] +'_'+ alt_taryears[1]+'.nc'
-        print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(alt_taryears[0])+' to '+str(alt_taryears[1]))
-    else:
+    #add exception for ERA5 since LWT catalogue ends in 2022
+    if cmip[mm] == 1: #1 is a fake number if a reanalysis is to be loaded and verified
+        if model[mm] == 'era5':
+            print('INFO: LWT catalouge for ERA5 ends in 2022.')
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_2022.nc'
+        else:
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'.nc'
+    elif cmip[mm] == 6: #for CMIP6 models starting in 1850 and ending in 2014
+        if (model[mm] == 'ec_earth3_veg') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1')) or (model[mm] == 'mpi_esm_1_2_hr') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1')):
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears_cmip6_long[0] +'_'+ taryears_cmip6_long[1]+'.nc'
+            print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(taryears_cmip6_long[0])+' to '+str(taryears_cmip6_long[1]))
+        else: #for CMIP6 models starting in 1979 and ending in 2014
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears_cmip6[0] +'_'+ taryears_cmip6[1]+'.nc'
+            print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(taryears_cmip6[0])+' to '+str(taryears_cmip6[1]))
+    elif cmip[mm] == 5: #for CMIP5 models starting in 1979 and ending in 2005
         mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'.nc'
+        print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(taryears[0])+' to '+str(taryears[1]))
+    else:
+        raise Exception('ERROR: chech <taryears>, <taryears_cmip6>, <taryears_cmip6_long> or <cmip> for <model[mm]> !')
+
+    #load the model or reanalysis data to be verified
     mod_dataset = xr.open_dataset(mod_srcpath)
     
     #cut out required time period
@@ -592,19 +609,35 @@ fig.set_xticklabels(model_plus_cmip,rotation=rotation,size=textsize) #model_plus
 fig.set_ylim(lowerlim,upperlim)
 fig.set_ylabel(errortype+' of relatative LWT frequencies ('+errorunit+')', size=9.)
 
-savepath=figpath+'/'+figfolder+'/'+region+'/boxplot_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savedir_boxplot = figpath+'/'+figfolder+'/'+region
+if os.path.isdir(savedir_boxplot) != True:
+    os.makedirs(savedir_boxplot)
+savepath = savedir_boxplot+'/boxplot_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
 plt.savefig(savepath, dpi=dpival)
 plt.close('all')
 
+savedir_error_map = figpath+'/'+figfolder+'/'+region+'/maps/'
+if os.path.isdir(savedir_error_map) != True:
+    os.makedirs(savedir_error_map)
 norm = mpl.colors.BoundaryNorm(cbounds_ranking, colormap_ranking.N)
 #plot errors and ranking for each model
 for mm in range(len(model)):    
     #error map
-    draw_error_map('error',region,lats_values,lons_values,np.transpose(arr_error[:,:,mm]),model[mm],mrun[mm],mylabels[mm],colormap_error,halfres,cbounds_map,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=None,ticks_cbar=None)
+    cbar_error = errortype.upper()+' of relative LWT frequencies ('+errorunit+')'
+    title_error = errortype+' '+model[mm]+' '+mrun[mm]+' w.r.t. '+refdata.upper()+' '+str(taryears[0])+'-'+str(taryears[1])
+    savename_error = savedir_error_map+'/'+errortype+'_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+    draw_error_map('error',region,lats_values,lons_values,np.transpose(arr_error[:,:,mm]),colormap_error,halfres,cbounds_map,snapval,savename_error,title_error,cbar_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
+    
     ##rank map
-    draw_error_map('rank',region,lats_values,lons_values,np.transpose(id_error[:,:,mm]),model[mm],mrun[mm],mylabels[mm],colormap_ranking,halfres,cbounds_map,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=norm,ticks_cbar=ticks_ranking)
+    cbar_rank = 'Rank of '+errortype+' ('+errorunit+')'
+    title_rank = 'Rank of '+errortype+' '+model[mm]+' '+mrun[mm]+' w.r.t. '+refdata.upper()+' '+str(taryears[0])+'-'+str(taryears[1])
+    savename_rank = savedir_error_map+'/rank_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+    draw_error_map('rank',region,lats_values,lons_values,np.transpose(id_error[:,:,mm]),colormap_ranking,halfres,cbounds_map,snapval,savename_rank,title_rank,cbar_rank,figformat,textsize,dpival,norm=norm,ticks_cbar=ticks_ranking)
 
 ##plot the Taylor diagrams, first get the LWT per model, then flatten data for each model and finally calc statistics and draw plot for this LWT
+savedir_taylor = figpath+'/'+figfolder+'/'+region+'/taylor'
+if os.path.isdir(savedir_taylor) != True:
+    os.makedirs(savedir_taylor)
 stat_all = np.zeros((dim_wt,arr_mod_freq.shape[3],6))
 for ww in range(dim_wt):
     stat = np.zeros((arr_mod_freq.shape[3],6))
@@ -634,7 +667,7 @@ for ww in range(dim_wt):
     #plot taylor
     ax = diagn(ax, stat, taylorprop, sigma_lim=sigma_lim)
     #ax.legend(model_plus_cmip[0:-4])
-    savepath=figpath+'/'+figfolder+'/'+region+'/taylor/LWT_'+str(ww+1)+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+    savepath = savedir_taylor+'/LWT_'+str(ww+1)+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
     plt.savefig(savepath, dpi=dpival)
     plt.close('all')
     stat_all[ww,:,:] = stat
@@ -713,14 +746,15 @@ for ii in list(range(len(mycolors_plot))):
 ax.text(median_error_plot.max(),tcr_plot.max(),'r = '+str(round(r_tcr.correlation,2)),style='italic')
 ax.set_aspect(1./ax.get_data_ratio())
 ax.patch.set_edgecolor('black') 
-ax.patch.set_linewidth('1')
+ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.xlabel('Median MAE of LWT frequencies (%)',size=12)
 plt.ylabel('TCR at time of CO2 doubling (K)',size=12)
 #forceAspect(ax,aspect=1)
 #plt.legend()
-plt.savefig(figpath+'/'+figfolder+'/'+region+'/'+errortype+'_vs_tcr_2xCO2_'+refdata+'_'+groupby+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat)
+savename_error_tcr = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_vs_tcr_2xCO2_'+refdata+'_'+groupby+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+plt.savefig(savename_error_tcr,dpi=dpival)
 plt.close('all')
 
 #generate a scatterplot for the relationship between model complexity and performance and calculate Spearman and Pearson correlation coefficients
@@ -734,7 +768,7 @@ for ii in list(range(len(median_error))):
     ax.plot(complex_sum[ii],median_error[ii],color=rgb[ii],marker=marker[ii],markersize=10,markeredgecolor='k',markeredgewidth=1.0)
 ax.set_aspect(1./ax.get_data_ratio())
 ax.patch.set_edgecolor('black') 
-ax.patch.set_linewidth('1')
+ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.xlabel('Model complexity',size=12)
@@ -753,7 +787,7 @@ for ii in list(range(len(median_error))):
     ax.plot(res_atm[ii],median_error[ii],color=rgb[ii],marker=marker[ii],markersize=10,markeredgecolor='k',markeredgewidth=1.0)
     #ax.plot(res_oc[ii],median_error[ii],color=rgb[ii],marker=marker[ii],markersize=10,markeredgecolor='k',markeredgewidth=1.0)
 ax.patch.set_edgecolor('black') 
-ax.patch.set_linewidth('1')
+ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 #plt.xlabel('Mesh size of the AGCM',size=12)
@@ -978,7 +1012,7 @@ rk_medperf_medpatt = stats.spearmanr(median_error,median_corr,nan_policy='omit')
 for ii in list(range(len(median_error))):
     ax.plot(mean_error[ii],mean_corr[ii],color=rgb[ii],marker=marker[ii],markersize=10,markeredgecolor='k',markeredgewidth=1.0)
 ax.patch.set_edgecolor('black') 
-ax.patch.set_linewidth('1')
+ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.xlabel('Mean MAE',size=12)
@@ -1016,10 +1050,16 @@ if plot_freq == 'yes':
     plt.close('all')
 
 #map multi-mode median performance
-draw_error_map('error',region,lats_values,lons_values,np.transpose(np.nanmedian(arr_error,axis=2)),'ensemble','median','performance',colormap_error,halfres,cbounds_map,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=None,ticks_cbar=None)
+cbar_median_error = 'Multi-model median '+errortype
+title_median_error = 'Median '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+'.'+figformat
+savename_median_error = savedir_error_map+'/median_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+draw_error_map('error',region,lats_values,lons_values,np.transpose(np.nanmedian(arr_error,axis=2)),colormap_error,halfres,cbounds_map,snapval,savename_median_error,title_median_error,cbar_median_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
 #map multi-model iqr of the performance
+cbar_iqr_error = 'Multi-model IQR of '+errortype
+title_iqr_error = 'IQR of '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+'.'+figformat
+savename_iqr_error = savedir_error_map+'/iqr_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
 q3, q1 = np.nanpercentile(arr_error, [75 ,25],axis=2)
-draw_error_map('error',region,lats_values,lons_values,np.transpose(q3-q1),'ensemble','iqr','performance',colormap_error,halfres,cbounds_map/2,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=None,ticks_cbar=None)
+draw_error_map('error',region,lats_values,lons_values,np.transpose(q3-q1),colormap_error,halfres,cbounds_map/2,snapval,savename_iqr_error,title_iqr_error,cbar_iqr_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
 
 print('INFO: analysis_hist.py has been run successfully!')
 

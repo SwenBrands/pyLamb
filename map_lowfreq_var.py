@@ -42,12 +42,12 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 
 #set input parameters
 n_par_jobs = 24 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-ensemble = 'mpi_esm_1_2_lr'
-experiment = 'piControl'
-region_various = ['nh'] #['nh','sh']
-tarwts_various = [[1],[18]] #[[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+ensemble = 'cera20c'
+experiment = '20c' #piControl, historical, amip, 20c
+region_various = ['sh'] #['nh','sh']
+tarwts_various = [[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #[[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
-taryears = [1860,2261] #start and end years to be analysed; [1979,2005] for historical experiments from CMIP5 and 6, historical and amip in CMIP6 extends to 2014 (at least), piControl period varies largely from one GCM to another
+taryears = [1979,2010] #start and end years to be analysed; [1860,2261] for mpi_esm_1_2_lr and piControl, [1979,2005] for historical experiments from CMIP5 and 6, historical and amip in CMIP6 extends to 2014 (at least), piControl period varies largely from one GCM to another
 aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
 fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
@@ -78,7 +78,7 @@ yearly_units = '%' # count or % (relative frequency); unit of the yearly LWT cou
 dpival = 300 #resolution of the output figure in dots per inch
 outformat = 'pdf' #png, pdf, etc.
 titlesize = 7. #Font size of the titles in the figures
-colormap_tr = 'seismic'
+colormap_tr = 'bwr' #seismic
 colormap_ps = 'hot_r'
 
 #get ensemble configuration as defined in analysis_functions,py, see get_ensemble_config() function therein
@@ -95,6 +95,7 @@ starttime = time.time()
 print('INFO: This script will use '+str(n_par_jobs)+' parallel jobs to calculate the long term tendencies and power spectra along all longitudinal grid-boxes at a given latitude.')
 wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
 ref_tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #used to decide whether to calc. the power spectra or not. To this end, continuous time series are needed.
+
 #set <anom> to "no" in any case for yearly aggregations
 if aggreg == 'year':
     print('INFO: Calculation of monthly anomaly values does not apply for yearly temporal aggregations; <anom> is thus forced to be "no" in this excursion of the script.')
@@ -302,7 +303,9 @@ for region in region_various:
             if os.path.isdir(path_trend) != True:
                 os.makedirs(path_trend)            
             savename_tr = path_trend+'/'+mktest+'_'+model_label+'_'+experiment+'_'+runlabel+'m_relax'+str(relax)+'_'+wtlabel2save+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+seaslabel+'_'+aggreg+'_dtr_'+detrend+'_an_'+anom+'_'+region+'.'+outformat
-            get_map_lowfreq_var(pattern_tr,xx,yy,agree_ind_tr,minval_tr,maxval_tr,dpival,title_tr,savename_tr,halfres,colormap_tr,titlesize,yearly_units)
+            #get_map_lowfreq_var(pattern_tr,xx,yy,agree_ind_tr,minval_tr,maxval_tr,dpival,title_tr,savename_tr,halfres,colormap_tr,titlesize,yearly_units)
+            cbar_label_trend = 'Trend ('+yearly_units+'/y)'
+            get_map_lowfreq_var(pattern_tr,xx,yy,minval_tr,maxval_tr,dpival,title_tr,savename_tr,halfres,colormap_tr,titlesize,cbar_label_trend,map_proj,agree_ind=agree_ind_tr,origpoint=None)
             
             #plot power spectrum agreement maps for each period
             period_unique = period[0,:,0,0]
@@ -323,7 +326,7 @@ for region in region_various:
                     continue
                 
                 pattern_ps = Pxx_med[pp,:,:]
-                cbar_label = 'Power spectrum amplitude ('+yearly_units+'$²$)'
+                cbar_label_period = 'Power spectrum amplitude ('+yearly_units+'$²$)'
                 #add nperseg in title and filename in case Welch periodogram is used
                 if periodogram_type == 'Welch':
                     title_ps = periodogram_type+' '+str(np.round(period_unique[pp],1))+'y '+window+' nfft'+str(nfft)+' nseg'+str(nperseg)+' ci'+str(round(ci_percentile))+' '+wtlabel+' '+model_label.upper()+' '+experiment+' '+runlabel+'m relax'+str(relax)+' '+str(taryears[0])+' '+str(taryears[1])+'-'+seaslabel+' '+aggreg+' dtr '+detrend+' an '+anom+' '+region
@@ -334,7 +337,7 @@ for region in region_various:
                 else:
                     raise Exception('ERROR: check entry for <periodogram_type>!')
                     
-                get_map_lowfreq_var(pattern_ps,xx,yy,agree_ind_ps[pp,:,:],minval_ps,maxval_ps,dpival,title_ps,savename_ps,halfres,colormap_ps,titlesize,cbar_label,origpoint=None)
+                get_map_lowfreq_var(pattern_ps,xx,yy,minval_ps,maxval_ps,dpival,title_ps,savename_ps,halfres,colormap_ps,titlesize,cbar_label_period,map_proj,agree_ind=agree_ind_ps[pp,:,:],origpoint=None)
             gc.collect() #explicetly free memory
 
 endtime = time.time()

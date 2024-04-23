@@ -47,6 +47,9 @@ def get_location(location_f):
     elif location_f == 'NYC':
         tarlat_f = 40.71427
         tarlon_f = -74.00597
+    elif location_f == 'Weddell Sea':
+        tarlat_f = -69.51251
+        tarlon_f = -54.75038
     else:
         raise Exception('ERROR: check entry for <location_f>!')
     return(tarlat_f,tarlon_f)
@@ -267,13 +270,14 @@ def get_error_attrs(errortype):
         cbounds_map = cbounds_persall
         errorunit = 'probability'
         lowerlim = 0
-        upperlim = 20
+        upperlim = 15
     else:
         raise Exception('ERROR: check entry for <errortype>!')
     return(cbounds_map,errorunit,lowerlim,upperlim)
     
 
-def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,model_f,mrun_f,mylabels_f,colormap_f,halfres,cbounds_map,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=None,ticks_cbar=None):
+#def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,model_f,mrun_f,mylabels_f,colormap_f,halfres,cbounds_map,snapval,figpath,figfolder,errortype,refdata,correct_ru,alt_runs,figformat,errorunit,textsize,dpival,norm=None,ticks_cbar=None):
+def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,colormap_f,halfres,cbounds_map,snapval,savename,titletext,cbarlabel,figformat,textsize,dpival,norm=None,ticks_cbar=None):
     ''' draws  and saves error or rank map for a given GCM'''
     fig = plt.figure()
     mymap = get_projection(region,lats_values_f,lons_values_f)
@@ -285,21 +289,22 @@ def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,model_f
     plotme = np.ma.masked_where(np.isnan(mat_error),mat_error)
     if plottype == 'error':
         mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, latlon=False, snap=snapval) #in newer Python versions, the x and y coordinates are interpreted as cell centers.
-        plt.title(errortype+', '+mylabels_f+', '+mrun_f+' w.r.t. '+refdata.upper()+', 1979-2005, all seasons', size=textsize+1)
+        plt.title(titletext, size=textsize+1)
         cbar = plt.colorbar(shrink=0.75)
-        cbar.set_label(errortype.upper()+' of relative LWT frequencies ('+errorunit+')', size=textsize)
+        cbar.set_label(cbarlabel, size=textsize)
         cbar.ax.tick_params(labelsize=textsize)
-        savepath=figpath+'/'+figfolder+'/'+region+'/maps/'+errortype+'_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+        #savepath=figpath+'/'+figfolder+'/'+region+'/maps/'+errortype+'_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
     elif plottype == 'rank':
         mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, norm = norm, latlon=False, snap=snapval)
-        plt.title('Performance rank for '+mylabels_f+', '+mrun_f+' w.r.t. '+refdata.upper()+', 1979-2005, all seasons', size=textsize+1)
+        plt.title(titletext, size=textsize+1)
         cbar = plt.colorbar()
+        cbar.set_label(cbarlabel, size=textsize)
         cbar.set_ticks(ticks_cbar)
         cbar.ax.tick_params(labelsize=textsize)
-        savepath=figpath+'/'+figfolder+'/'+region+'/maps/rank_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+        #savepath=figpath+'/'+figfolder+'/'+region+'/maps/rank_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
 
     mymap.drawcoastlines()
-    plt.savefig(savepath, dpi=dpival)
+    plt.savefig(savename, dpi=dpival)
     plt.close('all')
     
 

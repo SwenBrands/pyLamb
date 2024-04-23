@@ -13,7 +13,7 @@ import os
 exec(open('analysis_functions.py').read())
 
 #set input parameter
-city = 'Prague'
+city = 'Weddell Sea'
 tarmonths = list((1,2,3,4,5,6,7,8,9,10,11,12)) #target months
 dist_lon = 20
 dist_lat = 10
@@ -24,10 +24,10 @@ gridres = 2.5
 colormap = 'RdYlBu_r'
 outformat = 'pdf'
 
-gcm = 'era5'
-run = 'r1i1p1'
-experiment = 'historical' #historical, 20c, amip, ssp245, ssp585
-hemis = 'nh' #nh or sh
+gcm = 'cera20c'
+run = 'm0'
+experiment = '20c' #historical, 20c, amip, ssp245, ssp585
+hemis = 'sh' #nh or sh
 
 #execute ###############################################################################################
 tarlat,tarlon = get_location(city)
