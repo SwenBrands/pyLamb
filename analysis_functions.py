@@ -124,14 +124,23 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
         taryears_f=[1979,2017]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 10:
-        taryears_f=[1970,2028]
+    elif experiment_f == 'dcppA' and lead_time_f == 1:
+        taryears_f=[1961,2019]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 2:
+        taryears_f=[1962,2020]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 3:
+        taryears_f=[1963,2021]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 4:
+        taryears_f=[1964,2022]
         timestep_f = '6h'
     elif experiment_f == 'dcppA' and lead_time_f == 5:
         taryears_f=[1965,2023]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 1:
-        taryears_f=[1961,2019]
+    elif experiment_f == 'dcppA' and lead_time_f == 10:
+        taryears_f=[1970,2028]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1961-2028 for comparison of the historical+ssp245 runs with the dcppA runs
         print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp245 runs to cover the 1961-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
@@ -170,7 +179,7 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
         taryears_f=[1940,2022]
         timestep_f = '3h'
     else:
-        raise Exception('Error: check entry for <experiment_f> !')
+        raise Exception('Error: check entry for <experiment_f>, <model_f> and/or <lead_time_f> !')
     return(taryears_f,timestep_f)
 
 def z_transform(np_arr_f):
@@ -332,8 +341,8 @@ def get_transition_probabilities(wtcount,wt,timelag):
     return(prob_4d)
 
 
-def get_fig_transprobmat(prob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,modellabel,figpath,figfolder,region,dpival,timelag,wt_names):
-    wtcount = range(1,len(wt_names)+2) #pcolor needs one dimension more than in the data to work well, see https://github.com/matplotlib/basemap/issues/107
+def get_fig_transprobmat(prob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,modellabel,figpath_f,region,dpival,timelag,wt_names):
+    wtcount = np.arange(1,len(wt_names)+1) #pcolor needs one dimension more than in the data to work well, see https://github.com/matplotlib/basemap/issues/107
     for ii in range(len(lons_values)):
         for jj in range(len(lats_values)):
             XX,YY = np.meshgrid(wtcount,wtcount)
@@ -342,13 +351,15 @@ def get_fig_transprobmat(prob_4d,lons_values,lats_values,cmap_probmat,edgecolors
             plt.axis('square')
             plt.colorbar()
             plt.xlabel('Transition from')
-            plt.xticks(np.array(wtcount)+0.5)
+            plt.xticks(np.array(wtcount))
+            #plt.xticks(np.array(wtcount)+0.5)
             fig.axes.set_xticklabels(np.array(wt_names),rotation=45.,size=8.)
             plt.ylabel('Transition to')
-            plt.yticks(np.array(wtcount)+0.5)
+            #plt.yticks(np.array(wtcount)+0.5)
+            plt.yticks(np.array(wtcount))
             fig.axes.set_yticklabels(np.array(wt_names),rotation=0.,size=8.)
-            plt.title('Transition probability for '+refdata.upper()+' at lon '+str(lons_values[ii])+', lat '+str(lats_values[jj])+', lag '+str(timelag*6)+'h')
-            savepath = figpath+'/'+figfolder+'/'+region+'/transitions/plots/trans_prob_'+modellabel+'_'+region+'_lon_'+str(lons_values[ii])+'_lat_'+str(lats_values[jj])+'_lag_'+str(timelag*6)+'h.'+figformat
+            plt.title('Transition probability for '+modellabel+' at lon '+str(lons_values[ii])+', lat '+str(lats_values[jj])+', lag '+str(timelag*6)+'h')
+            savepath = figpath_f+'/trans_prob_'+modellabel+'_'+region+'_lon_'+str(lons_values[ii])+'_lat_'+str(lats_values[jj])+'_lag_'+str(timelag*6)+'h.'+figformat
             plt.savefig(savepath, dpi = dpival)
             plt.close('all')
 

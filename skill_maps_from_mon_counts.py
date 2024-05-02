@@ -24,15 +24,15 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 
 #set input parameter
 obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
-ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-experiment = ['dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
-experiment_out = ['dcppA_1','dcppA_5','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
-lead_time = [1,5,10,None] #lead time or forecast year or the dcppA LWT data
-start_years = [1961,1965,1970,1961] #list containing the start years of the experiment defined in <experiment>
-end_years = [2019,2023,2028,2028] #list containing the end years of the experiment defined in <experiment>
+ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_5','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+lead_time = [1,2,3,5,10,None] #lead time or forecast year or the dcppA LWT data
+start_years = [1961,1962,1963,1965,1970,1961] #list containing the start years of the experiment defined in <experiment>
+end_years = [2019,2020,2021,2023,2028,2028] #list containing the end years of the experiment defined in <experiment>
 
-ensemble_color = ['orange','black','grey','blue']
-ensemble_linestyle = ['dashed','dashed','solid','dotted']
+# ensemble_color = ['orange','red','black','grey','blue']
+# ensemble_linestyle = ['dashed','dashed','dashed','solid','dotted']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
 
@@ -646,7 +646,7 @@ for sea in np.arange(len(seasons)):
         if rpc_method == 'Scaife':
             minval_rpc = -0.1
         elif rpc_method == 'Eade':
-            minval_prc = rpc.min()
+            minval_rpc = rpc.min()
         else:
             raise Excecption('ERROR: check entry for <rpc_method> input parameter !')
         savename_nh = savedir_rpc+'/boxplot_rpc_'+rpc_method+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat

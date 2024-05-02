@@ -26,7 +26,7 @@ from joblib import Parallel, delayed
 import time
 import gc
 import psutil
-import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
+import pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('lambtyping_parallel.py').read())
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 exec(open('analysis_functions.py').read()) #a function assigning metadata to the models in <model> (see below)
@@ -35,7 +35,7 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 #Note: The time period is filtered in the previous interpolation step accomplished by <interpolator_xesmf.py>
 
 n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-experiment = '20c' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
+experiment = 'dcppA' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
 home = os.getenv('HOME')
 filesystem = 'lustre'
 hemis = 'sh' #sh or nh
@@ -44,7 +44,7 @@ calc_monthly_counts = 'yes' # yes or no, calculate monthly LWT count, this part 
 monthly_calc = 'serial' # serial or parallel, how to calculate the monthly LWT counts
 verbose_level = 2 #detail of verbose level used by the joblib Parallel function
 compression_level = None #integer between 1 and 9 or None, compression level of the output files
-lead_time = 10 #lead time in years, currently only used for dcppA experiments
+lead_time = 3 #lead time in years, currently only used for dcppA experiments
 
 #save monthly counts for all 27 types
 tarwts = np.arange(1,28) #The full LWT scheme will be considered, 1 = PA, 27 = U
@@ -63,9 +63,9 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
 # mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 
-# # dcppA runs
-# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-# mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+# dcppA runs
+model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
 
 # # ## accomplished rcp85 and ssp585 LWT catalogues for both the NH and SH
 # model = ['miroc_esm']
@@ -87,9 +87,9 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 #model = ['ec_earth3_veg']
 #mrun = ['r10i1p1f1']
 
-## accomplished CERA-20C LWT catalogues for both the NH and SH
-model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
-mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
+# ## accomplished CERA-20C LWT catalogues for both the NH and SH
+# model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
+# mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
 
 ###EXECUTE ####################################################################
 starttime = time.time()

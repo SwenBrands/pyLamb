@@ -30,6 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import time
 import os
+import pdb #then type <pdb.set_trace()> at a given line in the code below
 import seaborn as sns
 plt.style.use('seaborn')
 
@@ -49,12 +50,15 @@ tarpath = '/media/swen/ext_disk2/datos/lamb_cmip5/results_v2/6h' #path of the so
 figpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs'
 auxpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/pyLamb/aux'
 figfolder = 'figs_ref'+refdata #name of the folder containing the output figures
-#set target years
+
+#set target months and years
+season = [6,7,8,9]
+season_label = 'JJAS'
 taryears = ['1979', '2005'] #start and end years as indicated in source nc file containing the LWT catalogues (hereafter: "source files"); this is the period the analyses are conducted for; currently coincides with the years available for cmip5
 taryears_cmip6 = ['1979', '2014']
 taryears_cmip6_long = ['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
 #set LWT classification options
-classes_needed = 27 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH
+classes_needed = 18 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH
 minfreq = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 #set format and resolution of the output figures
 figformat = 'pdf' #format of output figures, pdf or png
@@ -86,7 +90,7 @@ correct_ru = 'no' #correct for the effects of reanalysis uncertainty; if set to 
 rank_ru = 0 # if set to 3, South America becomes a "certain" region; performance rank the alternative reanalysis takes in the multi-model ensemble is used as if it was a GCM. If exceeded, the corresponding grid-box is set to nan and is thus excluded from the analyses.
 plot_freq = 'yes' #plot an example barplot (GCMs vs. reanalysis) for illustrative purposes
 alt_runs = 'no' #loads get_historical_metadata_altruns.py to load alternative runs for a subset of 15 GCMs.
-plot_trans_prob = 'no' #plot pcolor figures showing the transition matrix at each grid-box.
+plot_trans_prob = 'yes' #plot pcolor figures showing the transition matrix at each grid-box.
 edgecolors = 'black' #color of the edges used in these pcolor figures
 cmap_probmat = 'hot_r' #colormap used to plot transition probability matrix
 
@@ -145,10 +149,10 @@ elif groupby == 'performance':
 else:
     raise Exception('ERROR: check entry for <groupby>!')
 
-csvfile = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_ref_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'.csv' #path of the csv file containing the median error for each model
-yamlfile = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_ref_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'.yaml' #path of the csv file containing the median error for each model
+csvfile = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/'+errortype+'_ref_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'.csv' #path of the csv file containing the median error for each model
+yamlfile = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/'+errortype+'_ref_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'.yaml' #path of the csv file containing the median error for each model
 
-print('info: starting analysis for '+region+', '+experiment+', ' +refdata+', '+errortype+' and complexity threshold '+str(complex_thresh))
+print('info: starting analysis for '+region+', '+season_label+', '+experiment+', ' +refdata+', '+errortype+' and complexity threshold '+str(complex_thresh))
 print('info: output figures will be saved in '+figfolder+' as '+figformat)
 print('info: minimum frequency is '+str(minfreq)+' for '+str(classes_needed)+' LWTs')
 
@@ -220,8 +224,9 @@ obs_dataset = xr.open_dataset(obs_srcpath)
 
 #cut out required time period
 dates_obs = pd.DatetimeIndex(obs_dataset.variables['time'].values)
-yearinds_obs = np.squeeze(np.where((dates_obs.year >= int(taryears[0])) & (dates_obs.year <= int(taryears[1]))))
-obs_dataset = obs_dataset.isel(time=yearinds_obs)
+time_ind_obs = (dates_obs.year >= int(taryears[0])) & (dates_obs.year <= int(taryears[1])) & dates_obs.month.isin(season)
+obs_dataset = obs_dataset.isel(time=time_ind_obs)
+dates_obs = pd.DatetimeIndex(obs_dataset.variables['time'].values)
 
 newlons = obs_dataset.lon.values
 newlons[np.where(newlons > 180.)] = newlons[np.where(newlons > 180.)]-360.
@@ -256,7 +261,7 @@ if errortype in ('TPMS','PERS','PERSall'):
     savedir = tarpath+'/'+experiment[0]+'/transitions/'+region
     if os.path.isdir(savedir) != True:
         os.makedirs(savedir)    
-    savepath = savedir+'/trans_prob_'+refdata+'_'+region+'.nc'
+    savepath = savedir+'/trans_prob_'+refdata+'_'+region+'_'+season_label+'.nc'
     try:
         print('INFO: try loading transition probablities from '+savepath)
         nc = xr.open_dataset(savepath)
@@ -275,8 +280,11 @@ if errortype in ('TPMS','PERS','PERSall'):
         outnc.close()
         del(outnc,savepath)
     if plot_trans_prob == 'yes':
-        print('INFO: Transition probabilities are plotted in '+figpath)
-        get_fig_transprobmat(obs_transprob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,refdata,figpath,figfolder,region,dpival,timelag,wt_names)
+        figpath_trans_prob = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/transition_probabilities/'+refdata
+        if os.path.isdir(figpath_trans_prob) != True:
+            os.makedirs(figpath_trans_prob)
+        print('INFO: The transition probabilities for '+refdata+' are plotted in '+figpath_trans_prob)
+        get_fig_transprobmat(obs_transprob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,refdata,figpath_trans_prob,region,dpival,timelag,wt_names)
 
 #get copies for evaluation against hadgem2 models and get rid of December 2005 data (which is lacking for these models) and optionally load or calc transition probabilities
 obs_wt_hadgem = np.copy(obs_wt)
@@ -296,7 +304,7 @@ dim_t_hadgem = len(dates_hadgem)
 
 if errortype in ('TPMS','PERS','PERSall'):
     #load transition probabilities for reanalysis with December 2005 data removed for use with HadGEM models or calculated them if they do not exist yet###########################
-    savepath = tarpath+'/'+experiment[0]+'/transitions/'+region+'/trans_prob_'+refdata+'_hadgem_'+region+'.nc'
+    savepath = tarpath+'/'+experiment[0]+'/transitions/'+region+'/trans_prob_'+refdata+'_hadgem_'+region+'_'+season_label+'.nc'
     try:
         print('INFO: try loading transition probablities from '+savepath)
         nc = xr.open_dataset(savepath)
@@ -343,7 +351,7 @@ for mm in range(len(model)):
             print('INFO: LWT catalouge for ERA5 ends in 2022.')
             mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_2022.nc'
         else:
-            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'.nc'
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'_'+season_label+'.nc'
     elif cmip[mm] == 6: #for CMIP6 models starting in 1850 and ending in 2014
         if (model[mm] == 'ec_earth3_veg') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1')) or (model[mm] == 'mpi_esm_1_2_hr') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1')):
             mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears_cmip6_long[0] +'_'+ taryears_cmip6_long[1]+'.nc'
@@ -362,9 +370,11 @@ for mm in range(len(model)):
     
     #cut out required time period
     dates_mod = pd.DatetimeIndex(mod_dataset.variables['time'].values)
-    yearinds_mod = np.squeeze(np.where((dates_mod.year >= int(taryears[0])) & (dates_mod.year <= int(taryears[1]))))
-    mod_dataset = mod_dataset.isel(time=yearinds_mod)
-
+    time_ind_mod = (dates_mod.year >= int(taryears[0])) & (dates_mod.year <= int(taryears[1])) & dates_mod.month.isin(season)
+    mod_dataset = mod_dataset.isel(time=time_ind_mod)
+    dates_mod = pd.DatetimeIndex(mod_dataset.variables['time'].values)
+    
+    #roll the longitudes
     newlons = mod_dataset.lon.values
     newlons[np.where(newlons > 180.)] = newlons[np.where(newlons > 180.)]-360.
     mod_dataset.assign_coords(lon=newlons)
@@ -405,8 +415,11 @@ for mm in range(len(model)):
             outnc.close()
             del(outnc,savepath)
         if plot_trans_prob == 'yes':
-            print('INFO: Transition probabilities are plotted in '+figpath)
-            get_fig_transprobmat(mod_transprob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,model_plus_run[mm],figpath,figfolder,region,dpival,timelag,wt_names)
+            figpath_trans_prob = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/transition_probabilities/'+model_plus_run[mm]
+            if os.path.isdir(figpath_trans_prob) != True:
+                os.makedirs(figpath_trans_prob)
+            print('INFO: The modelled transition probabilities are plotted in '+figpath_trans_prob)
+            get_fig_transprobmat(mod_transprob_4d,lons_values,lats_values,cmap_probmat,edgecolors,figformat,model_plus_run[mm],figpath_trans_prob,region,dpival,timelag,wt_names)
         if model[mm] in ('hadgem2_es','hadgem2_cc'):
             if errortype in ('TPMS','PERS'):
                 probdiff = mod_transprob_4d - obs_transprob_4d_hadgem
@@ -491,8 +504,8 @@ id_best = np.argmin(arr_error,axis=2)+1. #best rank is 1
 if correct_ru == 'yes':
     if (region == 'nh' and errortype in ('MAE','TPMS','PERS','PERSall','KL') and classes_needed == 27 and minfreq == 0.001) or (region == 'sh' and errortype in ('MAE','TPMS','PERS','PERSall','KL') and classes_needed == 20 and minfreq == 0.001):
         print('INFO: model error and ranks where ERA-Interim vs. JRA-55 does not perform best first will be set to nan!')
-        #rean_file = auxpath+'/rank_'+errortype+'_interim_jra55_'+region+'_1979_2005.nc'
-        rean_file = auxpath+'/rank_MAE_interim_jra55_'+region+'_1979_2005.nc'
+        rean_file = auxpath+'/rank_'+errortype+'_interim_jra55_'+region+'_1979_2005.nc'
+        #rean_file = auxpath+'/rank_MAE_interim_jra55_'+region+'_1979_2005.nc'
         
         #use these commmands to create and save <corrnc>
         #rank_interim_vs_jra55_in_ensemble = id_error[:,:,0]
@@ -609,14 +622,14 @@ fig.set_xticklabels(model_plus_cmip,rotation=rotation,size=textsize) #model_plus
 fig.set_ylim(lowerlim,upperlim)
 fig.set_ylabel(errortype+' of relatative LWT frequencies ('+errorunit+')', size=9.)
 
-savedir_boxplot = figpath+'/'+figfolder+'/'+region
+savedir_boxplot = figpath+'/'+figfolder+'/'+region+'/'+season_label
 if os.path.isdir(savedir_boxplot) != True:
     os.makedirs(savedir_boxplot)
-savepath = savedir_boxplot+'/boxplot_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savepath = savedir_boxplot+'/boxplot_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savepath, dpi=dpival)
 plt.close('all')
 
-savedir_error_map = figpath+'/'+figfolder+'/'+region+'/maps/'
+savedir_error_map = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/maps/'
 if os.path.isdir(savedir_error_map) != True:
     os.makedirs(savedir_error_map)
 norm = mpl.colors.BoundaryNorm(cbounds_ranking, colormap_ranking.N)
@@ -625,17 +638,17 @@ for mm in range(len(model)):
     #error map
     cbar_error = errortype.upper()+' of relative LWT frequencies ('+errorunit+')'
     title_error = errortype+' '+model[mm]+' '+mrun[mm]+' w.r.t. '+refdata.upper()+' '+str(taryears[0])+'-'+str(taryears[1])
-    savename_error = savedir_error_map+'/'+errortype+'_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+    savename_error = savedir_error_map+'/'+errortype+'_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
     draw_error_map('error',region,lats_values,lons_values,np.transpose(arr_error[:,:,mm]),colormap_error,halfres,cbounds_map,snapval,savename_error,title_error,cbar_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
     
     ##rank map
     cbar_rank = 'Rank of '+errortype+' ('+errorunit+')'
     title_rank = 'Rank of '+errortype+' '+model[mm]+' '+mrun[mm]+' w.r.t. '+refdata.upper()+' '+str(taryears[0])+'-'+str(taryears[1])
-    savename_rank = savedir_error_map+'/rank_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+    savename_rank = savedir_error_map+'/rank_'+model[mm]+'_'+mrun[mm]+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
     draw_error_map('rank',region,lats_values,lons_values,np.transpose(id_error[:,:,mm]),colormap_ranking,halfres,cbounds_map,snapval,savename_rank,title_rank,cbar_rank,figformat,textsize,dpival,norm=norm,ticks_cbar=ticks_ranking)
 
 ##plot the Taylor diagrams, first get the LWT per model, then flatten data for each model and finally calc statistics and draw plot for this LWT
-savedir_taylor = figpath+'/'+figfolder+'/'+region+'/taylor'
+savedir_taylor = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/taylor'
 if os.path.isdir(savedir_taylor) != True:
     os.makedirs(savedir_taylor)
 stat_all = np.zeros((dim_wt,arr_mod_freq.shape[3],6))
@@ -667,7 +680,7 @@ for ww in range(dim_wt):
     #plot taylor
     ax = diagn(ax, stat, taylorprop, sigma_lim=sigma_lim)
     #ax.legend(model_plus_cmip[0:-4])
-    savepath = savedir_taylor+'/LWT_'+str(ww+1)+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+    savepath = savedir_taylor+'/LWT_'+str(ww+1)+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
     plt.savefig(savepath, dpi=dpival)
     plt.close('all')
     stat_all[ww,:,:] = stat
@@ -690,7 +703,7 @@ outnc.attrs['unit'] = errorunit
 outnc.attrs['reference_reanalysis'] = refdata
 outnc.attrs['documentation'] = 'doi: 10.5194/gmd-15-1375-2022'
 outnc.attrs['contact'] = 'Swen Brands, swen.brands@gmail.com'
-savepath_outnc = figpath+'/'+figfolder+'/'+region+'/gridbox_errors_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
+savepath_outnc = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/gridbox_errors_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
 print('INFO: the grib-box-scale circulation errors are saved at '+savepath_outnc)
 outnc.to_netcdf(savepath_outnc)
 outnc.close()
@@ -703,7 +716,7 @@ outnc.attrs['unit'] = errorunit
 outnc.attrs['reference_reanalysis'] = refdata
 outnc.attrs['documentation'] = '1. GRL manuscript 2022GL101446 and 2. doi: 10.5194/gmd-15-1375-2022'
 outnc.attrs['contact'] = 'Swen Brands, swen.brands@gmail.com'
-savepath_outnc = figpath+'/'+figfolder+'/'+region+'/lon_x_lat_x_gcm_errors_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
+savepath_outnc = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/lon_x_lat_x_gcm_errors_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
 print('INFO: the grib-box-scale circulation errors in lon x lat x gcm format are saved at '+savepath_outnc)
 outnc.to_netcdf(savepath_outnc)
 outnc.close()
@@ -749,11 +762,11 @@ ax.patch.set_edgecolor('black')
 ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
-plt.xlabel('Median MAE of LWT frequencies (%)',size=12)
+plt.xlabel('Median '+errortype,size=12)
 plt.ylabel('TCR at time of CO2 doubling (K)',size=12)
 #forceAspect(ax,aspect=1)
 #plt.legend()
-savename_error_tcr = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_vs_tcr_2xCO2_'+refdata+'_'+groupby+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savename_error_tcr = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/'+errortype+'_vs_tcr_2xCO2_'+refdata+'_'+groupby+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savename_error_tcr,dpi=dpival)
 plt.close('all')
 
@@ -772,10 +785,10 @@ ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.xlabel('Model complexity',size=12)
-plt.ylabel('Median MAE of LWT frequencies (%)',size=12)
+plt.ylabel('Median '+errortype,size=12)
 #forceAspect(ax,aspect=1)
 #plt.legend()
-plt.savefig(figpath+'/'+figfolder+'/'+region+'/complexity_vs_'+errortype+'_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat)
+plt.savefig(figpath+'/'+figfolder+'/'+region+'/'+season_label+'/complexity_vs_'+errortype+'_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat)
 plt.close('all')
 
 #generate a scatterplot for the relationship between horizontal or 3D resolution of the AGCM and performance, note that the mesh sizes are calculated in get_corr.py
@@ -798,7 +811,7 @@ plt.xlim([0,1.5*10**7]) #for 3d meshsize
 ax.set_aspect(1./ax.get_data_ratio())
 #forceAspect(ax,aspect=1)
 #plt.legend()
-plt.savefig(figpath+'/'+figfolder+'/'+region+'/meshsize_agcm_vs_'+errortype+'_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat)
+plt.savefig(figpath+'/'+figfolder+'/'+region+'/'+season_label+'/meshsize_agcm_vs_'+errortype+'_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat)
 plt.close('all')
 
 #generate and save yaml file to be used in the EURO-CORDEX github entry, as suggested by Jesús Fernández, CSIC
@@ -865,7 +878,7 @@ outnc.attrs['contact'] = 'Swen Brands, swen.brands@gmail.com'
 outnc.method.attrs['method1'] = '1 - r, where r is the average of '+str(len(model)-1)+' correlation coefficients obtained from correlating the spatial error pattern of the indicated GCM with the error patterns of n='+str(len(model)-1)+' other GCMs.'
 outnc.method.attrs['method2'] = '1 - r^2 for r >= 0 and 1 + r^2 for r < 0, where r is the average of '+str(len(model)-1)+' correlation coefficients obtained from correlating the spatial error pattern of the indicated GCM with the error patterns of n='+str(len(model)-1)+' other GCMs.'
 outnc.gcm.attrs['description'] = 'https://github.com/SwenBrands/gcm-metadata-for-cmip/blob/main/get_historical_metadata.py'
-savepath_outnc = figpath+'/'+figfolder+'/'+region+'/gcm_weights_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
+savepath_outnc = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/gcm_weights_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
 print('INFO: the weighting factors per GCM are saved at '+savepath_outnc)
 outnc.to_netcdf(savepath_outnc)
 outnc.close()
@@ -873,7 +886,7 @@ del(outnc,savepath_outnc)
 
 #plot the correlation matrix
 fig = plt.pcolor(corrmat,cmap=colormap_error,norm=norm_matrix)
-plt.title('Pattern correlation for the pointwise MAE of the LWT frequencies over '+region.upper()+' domain',size=textsize)
+plt.title('Pattern correlation for the pointwise '+errortype+' over '+region.upper()+' domain '+season_label,size=textsize)
 plt.margins(x=0, y=0)
 plt.xticks(np.array(range(0,len(model)))+0.5)
 plt.subplots_adjust(bottom=0.18) #see https://www.python-graph-gallery.com/192-about-matplotlib-margins
@@ -885,7 +898,7 @@ cbar = plt.colorbar(shrink=0.75, ticks=cbounds[::2], extend='min', drawedges=Tru
 cbar.set_label(corrmethod[0].upper()+corrmethod[1:].lower()+' correlation coefficient',size=textsize)
 cbar.ax.tick_params(labelsize=textsize-1,labelright=textsize-2)
 fig.axes.axes.set_aspect(1./fig.axes.axes.get_data_ratio()) #set equal axis lengths
-savepath = figpath+'/'+figfolder+'/'+region+'/corrmat_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savepath = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/corrmat_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savepath, dpi=dpival)
 plt.close('all')
 
@@ -906,7 +919,7 @@ flatrho_3 = np.concatenate((np.expand_dims(flatrho,1),np.expand_dims(flatrho_cmi
 fig = plt.figure()
 flierprops = dict(marker='x', markerfacecolor='black', markersize=12,linestyle='none')
 sns.boxplot(data=flatrho,orient='v',width=0.1,color='white')
-savepath_boxplot = figpath+'/'+figfolder+'/'+region+'/boxplot_patterncorr_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savepath_boxplot = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/boxplot_patterncorr_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savepath_boxplot, dpi=dpival)
 plt.close('all')
 
@@ -917,7 +930,7 @@ outnc.attrs['description'] = 'rho is the spatial correlation of the mean absolut
 outnc.attrs['unit'] = corrmethod[0].upper()+corrmethod[1:].lower()+' correlation coefficient'
 outnc.attrs['reference'] = 'doi: 10.5194/gmd-15-1375-2022'
 outnc.attrs['contact'] = 'Swen Brands, swen.brands@gmail.com'
-savepath_outnc = figpath+'/'+figfolder+'/'+region+'/corrmat_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
+savepath_outnc = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/corrmat_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.nc'
 print('INFO: the correlation matrix describing inter model dependencies is saved at '+savepath_outnc)
 outnc.to_netcdf(savepath_outnc)
 outnc.close()
@@ -988,7 +1001,7 @@ plt.plot(range(1, km_nr+1), distortions, marker='o')
 plt.xlabel('Number of clusters')
 plt.ylabel('Sum of the squared errors')
 plt.xticks(range(1, km_nr+1))
-savepath_elbow = figpath+'/'+figfolder+'/'+region+'/elbow_nrclust_'+str(km_nr)+'_stand_'+stand_for_kmeans+'_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savepath_elbow = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/elbow_nrclust_'+str(km_nr)+'_stand_'+stand_for_kmeans+'_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savepath_elbow, dpi=dpival)
 plt.close('all')
 
@@ -998,7 +1011,7 @@ plt.plot(range(2, km_nr+1), silhouette_coefficients, marker='o')
 plt.xlabel('Number of clusters')
 plt.ylabel('Silhouette coefficient')
 plt.xticks(range(1, km_nr+1))
-savepath_elbow = figpath+'/'+figfolder+'/'+region+'/silhouette_nrclust_'+str(km_nr)+'_stand_'+stand_for_kmeans+'_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
+savepath_elbow = figpath+'/'+figfolder+'/'+region+'/'+season_label+'/silhouette_nrclust_'+str(km_nr)+'_stand_'+stand_for_kmeans+'_'+corrmethod+'_'+errortype+'_wrt_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 plt.savefig(savepath_elbow, dpi=dpival)
 plt.close('all')
 
@@ -1015,11 +1028,11 @@ ax.patch.set_edgecolor('black')
 ax.patch.set_linewidth(1)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
-plt.xlabel('Mean MAE',size=12)
-plt.ylabel('Mean spatial correlation of the grid-box-scale MAEs',size=12)
+plt.xlabel('Mean '+errortype,size=12)
+plt.ylabel('Mean spatial correlation of the grid-box-scale '+errortype,size=12)
 plt.title('r = '+str(round(rho_meanperf_meanpattcorr[0],2)))
 ax.set_aspect(1./ax.get_data_ratio())
-plt.savefig(figpath+'/'+figfolder+'/'+region+'/mean_mae_vs_mean_corr_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat)
+plt.savefig(figpath+'/'+figfolder+'/'+region+'/'+season_label+'/mean_mae_vs_mean_corr_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat)
 plt.close('all')
 
 #organize output of the kmeans clustering
@@ -1046,18 +1059,18 @@ if plot_freq == 'yes':
     plt.xlabel('Lamb Weather Type')
     plt.ylabel('Relative Frequency')
     plt.legend()
-    plt.savefig(figpath+'/'+figfolder+'/'+region+'/example_barplot_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat)
+    plt.savefig(figpath+'/'+figfolder+'/'+region+'/'+season_label+'/example_barplot_'+refdata+'_'+region+'_'+groupby+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat)
     plt.close('all')
 
 #map multi-mode median performance
 cbar_median_error = 'Multi-model median '+errortype
-title_median_error = 'Median '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+'.'+figformat
-savename_median_error = savedir_error_map+'/median_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+title_median_error = 'Median '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+' '+season_label
+savename_median_error = savedir_error_map+'/median_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 draw_error_map('error',region,lats_values,lons_values,np.transpose(np.nanmedian(arr_error,axis=2)),colormap_error,halfres,cbounds_map,snapval,savename_median_error,title_median_error,cbar_median_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
 #map multi-model iqr of the performance
 cbar_iqr_error = 'Multi-model IQR of '+errortype
-title_iqr_error = 'IQR of '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+'.'+figformat
-savename_iqr_error = savedir_error_map+'/iqr_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'.'+figformat
+title_iqr_error = 'IQR of '+errortype+' for '+str(len(model))+' models w.r.t '+refdata+'_'+region+' ruout '+correct_ru+' altruns '+alt_runs+' '+str(taryears[0])+'-'+str(taryears[1])+' '+season_label
+savename_iqr_error = savedir_error_map+'/iqr_'+errortype+'_'+str(len(model))+'_models_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_'+str(taryears[0])+'_'+str(taryears[1])+'_'+season_label+'.'+figformat
 q3, q1 = np.nanpercentile(arr_error, [75 ,25],axis=2)
 draw_error_map('error',region,lats_values,lons_values,np.transpose(q3-q1),colormap_error,halfres,cbounds_map/2,snapval,savename_iqr_error,title_iqr_error,cbar_iqr_error,figformat,textsize,dpival,norm=None,ticks_cbar=None)
 

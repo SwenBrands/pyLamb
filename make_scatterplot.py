@@ -15,40 +15,43 @@ import matplotlib as mpl
 import matplotlib.colors as colors
 from mpl_toolkits.basemap import addcyclic
 import yaml
-from utiles import crea_cmap
+#from utiles import crea_cmap
 from sklearn import preprocessing
 import os
 import seaborn as sns
+import pdb #then type <pdb.set_trace()> at a given line in the code below
 plt.style.use('seaborn')
 
 exec(open('get_historical_metadata.py').read())
 
 #set general input parameters
 home = os.getenv('HOME')
-input_path = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs'
-output_path = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs/summary_scatterplots'
+input_path = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs'
+output_path = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs/summary_scatterplots'
 figformat = 'pdf' #format of output figures, pdf or png
 mode = 'median' #statistic to be plotted, median, permodel or all
-standardize = 'mean' #mean, stand, logstand #optionally remove the 1) mean, 2) standardize or 3) log-transform and standardize the median erros; these options are only applicable if mode = 'median'
+standardize = 'no' #no, mean, stand, logstand #optionally remove the 1) mean, 2) standardize or 3) log-transform and standardize the median erros; these options are only applicable if mode = 'median'
 
 #x-axis configuration
-refrean_x = 'jra55' #interim, jra55 or era5 reference reanlaysis dataset
-region_x = 'sh' #nh, sh, eurocordex, cordexna, escena
+refrean_x = 'era5' #interim, jra55 or era5 reference reanlaysis dataset
+region_x = 'escena' #nh, sh, eurocordex, cordexna, escena
 errortype_x = 'MAE' #error type to be computed, MAE or KL, Mean Absolute Error or Kullback-Leibler divergence
-classes_needed_x = 20 #minimum nuber of classes required to plot the result on a map, 27 for NH and 20 for SH
+season_x = 'JJAS' #season to be plotted
+classes_needed_x = 27 #minimum nuber of classes required to plot the result on a map, 27 for NH and 20 for SH
 minfreq_x = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 groupby_x = 'agcm'
-correct_ru_x = 'yes'
+correct_ru_x = 'no'
 alt_runs_x = 'no'
 
 #y-axis configuration
-refrean_y = 'jra55' #interim, jra55 or era5 reference reanlaysis dataset
-region_y = 'nh' #nh, sh, eurocordex, cordexna, escena
-errortype_y = 'MAE' #error type to be computed, MAE or KL, Mean Absolute Error or Kullback-Leibler divergence
+refrean_y = 'era5' #interim, jra55 or era5 reference reanlaysis dataset
+region_y = 'escena' #nh, sh, eurocordex, cordexna, escena
+errortype_y = 'PERSall' #error type to be computed, MAE or KL, Mean Absolute Error or Kullback-Leibler divergence
+season_y = 'JJAS' #season to be plotted
 classes_needed_y = 27 #minimum nuber of classes required to plot the result on a map, 27 for NH and 20 for SH
 minfreq_y = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 groupby_y = 'agcm'
-correct_ru_y = 'yes'
+correct_ru_y = 'no'
 alt_runs_y = 'no'
 
 #EXECUTION####################
@@ -65,8 +68,8 @@ if region_x != region_y:
  #   raise Exception('ERROR: standardization is not applicable for mode = '+mode+' in this version of the script!')
 
 #define input paths and load the data
-file_x = input_path+'/figs_ref'+refrean_x+'/'+region_x+'/gridbox_errors_'+errortype_x+'_wrt_'+refrean_x+'_'+region_x+'_'+groupby_x+'_ruout_'+correct_ru_x+'_altruns_'+alt_runs_x+'_1979-2005.nc'
-file_y = input_path+'/figs_ref'+refrean_y+'/'+region_y+'/gridbox_errors_'+errortype_y+'_wrt_'+refrean_y+'_'+region_y+'_'+groupby_y+'_ruout_'+correct_ru_y+'_altruns_'+alt_runs_y+'_1979-2005.nc'
+file_x = input_path+'/figs_ref'+refrean_x+'/'+region_x+'/'+season_x+'/gridbox_errors_'+errortype_x+'_wrt_'+refrean_x+'_'+region_x+'_'+groupby_x+'_ruout_'+correct_ru_x+'_altruns_'+alt_runs_x+'_1979-2005.nc'
+file_y = input_path+'/figs_ref'+refrean_y+'/'+region_y+'/'+season_y+'/gridbox_errors_'+errortype_y+'_wrt_'+refrean_y+'_'+region_y+'_'+groupby_y+'_ruout_'+correct_ru_y+'_altruns_'+alt_runs_y+'_1979-2005.nc'
 nc_x = xr.open_dataset(file_x)
 nc_y = xr.open_dataset(file_y)
 model_x = nc_x.coords['gcm'].values.tolist()
@@ -98,6 +101,8 @@ elif standardize == 'stand':
     print('Info: median errors are standardized...')
     median_x = preprocessing.scale(median_x)
     median_y = preprocessing.scale(median_y)
+elif standardize == 'no':
+    print('As requested by the user, the domain-wide median error is not standardized prior to visualization !')
 else:
     raise Exception('ERROR: unknown entry for <standardize>!')
 
@@ -133,6 +138,9 @@ for mm in range(len(model)):
 
 rgb_unique = np.unique(rgb)
 
+output_dir = output_path+'/'+errortype_x+'_vs_'+errortype_y+'/'+refrean_x+'_vs_'+refrean_y+'/'+region_x+'_vs_'+region_y
+if os.path.isdir(output_dir) != True:
+    os.makedirs(output_dir)
 #make the scatterplot
 if mode == 'median':
     #calculate correlation coefficient allowing nans
@@ -143,22 +151,30 @@ if mode == 'median':
     ax = fig.gca()
     for ii in list(range(len(median_x))):
         ax.plot(median_x[ii],median_y[ii],color=rgb[ii],marker=marker[ii],markersize=10,markeredgecolor='k',markeredgewidth=1.0,linestyle='None')
-    ax.plot(median_x,median_x,'k-')
     #ax.set_aspect(1./ax.get_data_ratio())
     #ax.set_aspect('equal', 'box')
     ax.patch.set_edgecolor('black') 
-    ax.patch.set_linewidth('1')
+    ax.patch.set_linewidth(1)
     ax.set_aspect(1./ax.get_data_ratio())
     plt.title('Domain-wide median error for all GCMs, rho:'+str(rho))
     x_plus_y_values = np.concatenate((median_x,median_y))
     addval = np.max(x_plus_y_values)/30
-    plt.xlim(np.min(x_plus_y_values) - addval, np.max(x_plus_y_values) + addval)
-    plt.ylim(np.min(x_plus_y_values) - addval, np.max(x_plus_y_values) + addval)
+    #define x and y limits
+    if standardize in ('logstand','mean','stand'):
+        plt.xlim(np.min(x_plus_y_values) - addval, np.max(x_plus_y_values) + addval)
+        plt.ylim(np.min(x_plus_y_values) - addval, np.max(x_plus_y_values) + addval)
+        ax.plot(median_x,median_x,'k-')
+    elif standardize == 'no':
+        print('X and Y limits are no specifically set for <standardize = no>.')
+    else:
+        raise Exception('ERROR: check entry for <standardize> parameter !')
     #plt.xticks(fontsize=12)
     #plt.yticks(fontsize=12)
     plt.xlabel(refrean_x.upper()+', '+region_x.upper()+', '+errortype_x.upper(),size=12)
     plt.ylabel(refrean_y.upper()+', '+region_y.upper()+', '+errortype_y.upper(),size=12)
-    plt.savefig(output_path+'/'+errortype_x+'_vs_'+errortype_y+'/'+refrean_x+'_vs_'+refrean_y+'/'+region_x+'_vs_'+region_y+'/scatterplot_allgcms_'+mode+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'_stand_'+standardize+'.'+figformat)
+    #plt.axis('tight')
+    savename = output_dir+'/scatterplot_allgcms_'+mode+'_'+season_x+'_'+season_y+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'_stand_'+standardize+'.'+figformat
+    plt.savefig(savename)
     plt.close('all')
 elif mode == 'all':
     fig = plt.figure()
@@ -168,13 +184,13 @@ elif mode == 'all':
     ax.plot(median_x,median_x,'k-')
     ax.set_aspect(1./ax.get_data_ratio())
     ax.patch.set_edgecolor('black') 
-    ax.patch.set_linewidth('1')
+    ax.patch.set_linewidth(1)
     #plt.title(refrean_x+', '+region_x+', '+errortype_x+', vs '+refrean_y+', '+region_y+', '+errortype_y)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.xlabel(refrean_x.upper()+', '+region_x.upper()+', '+errortype_x.upper(),size=12)
     plt.ylabel(refrean_y.upper()+', '+region_y.upper()+', '+errortype_y.upper(),size=12)
-    plt.savefig(output_path+'/'+errortype_x+'_vs_'+errortype_y+'/'+refrean_x+'_vs_'+refrean_y+'/'+region_x+'_vs_'+region_y+'/scatterplot_allgcms_'+mode+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'.'+figformat)
+    plt.savefig(output_dir+'/scatterplot_allgcms_'+mode+'_'+season_x+'_'+season_y+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'.'+figformat)
     plt.close('all')
 elif mode == 'permodel':
     rho_all_models = np.zeros(len(model))
@@ -201,14 +217,14 @@ elif mode == 'permodel':
             #ax.axes('equal')
         #ax.set_aspect(1./ax.get_data_ratio())
         #ax.patch.set_edgecolor('black') 
-        #ax.patch.set_linewidth('1')
+        #ax.patch.set_linewidth(1)
         plt.title('Grid-box-scale errors for '+model[ii]+', rho:'+str(rho))
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.xlabel(refrean_x.upper()+', '+region_x.upper()+', '+errortype_x.upper(),size=12)
         plt.ylabel(refrean_y.upper()+', '+region_y.upper()+', '+errortype_y.upper(),size=12)
         fig.tight_layout()
-        plt.savefig(output_path+'/'+errortype_x+'_vs_'+errortype_y+'/'+refrean_x+'_vs_'+refrean_y+'/'+region_x+'_vs_'+region_y+'/scatterplot_'+model[ii]+'_'+mode+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'.'+figformat)
+        plt.savefig(output_dir+'/scatterplot_'+model[ii]+'_'+mode+'_'+season_x+'_'+season_y+'_'+refrean_x+'_vs_'+refrean_y+'_'+region_x+'_vs_'+region_y+'_'+errortype_x+'_vs_'+errortype_y+'.'+figformat)
         plt.close('all')
         rho_all_models[ii] = rho
         rho_all_models = pd.DataFrame(data=rho_all_models,index=model)
