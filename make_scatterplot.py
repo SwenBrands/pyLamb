@@ -30,7 +30,7 @@ input_path = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs'
 output_path = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs/summary_scatterplots'
 figformat = 'pdf' #format of output figures, pdf or png
 mode = 'median' #statistic to be plotted, median, permodel or all
-standardize = 'no' #no, mean, stand, logstand #optionally remove the 1) mean, 2) standardize or 3) log-transform and standardize the median erros; these options are only applicable if mode = 'median'
+standardize = 'logstand' #no, mean, stand, logstand #optionally remove the 1) mean, 2) standardize or 3) log-transform and standardize the median erros; these options are only applicable if mode = 'median'
 
 #x-axis configuration
 refrean_x = 'era5' #interim, jra55 or era5 reference reanlaysis dataset

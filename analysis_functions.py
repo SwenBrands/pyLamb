@@ -139,6 +139,18 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == 'dcppA' and lead_time_f == 5:
         taryears_f=[1965,2023]
         timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 6:
+        taryears_f=[1966,2024]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 7:
+        taryears_f=[1967,2025]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 8:
+        taryears_f=[1968,2026]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 9:
+        taryears_f=[1969,2027]
+        timestep_f = '6h'
     elif experiment_f == 'dcppA' and lead_time_f == 10:
         taryears_f=[1970,2028]
         timestep_f = '6h'
@@ -259,7 +271,7 @@ def get_error_attrs(errortype):
         cbounds_map = cbounds_mae
         errorunit = 'percent'
         lowerlim = 0.
-        upperlim = 3.5 #upper limit for summary MAE boxplot's Y-axis, currently best choice is 3.5 for MAE and 1.5 for KL, 3.5 for NH
+        upperlim = 4. #upper limit for summary MAE boxplot's Y-axis; for hemispheric results, the best choice is 3.5 for MAE and 1.5 for KL, 3.5 for NH. For the special case of escena, jjas and timelag = 4, set upperlim = 4 to obtain a good representation in the boxplot
     elif errortype == 'KL':
         cbounds_map = cbounds_kl
         errorunit = 'entropy'
@@ -279,7 +291,7 @@ def get_error_attrs(errortype):
         cbounds_map = cbounds_persall
         errorunit = 'probability'
         lowerlim = 0
-        upperlim = 15
+        upperlim = 20 #15 for escena, jjas y timelag = 1; 20 for timelag = 4
     else:
         raise Exception('ERROR: check entry for <errortype>!')
     return(cbounds_map,errorunit,lowerlim,upperlim)

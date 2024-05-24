@@ -44,7 +44,7 @@ calc_monthly_counts = 'yes' # yes or no, calculate monthly LWT count, this part 
 monthly_calc = 'serial' # serial or parallel, how to calculate the monthly LWT counts
 verbose_level = 2 #detail of verbose level used by the joblib Parallel function
 compression_level = None #integer between 1 and 9 or None, compression level of the output files
-lead_time = 3 #lead time in years, currently only used for dcppA experiments
+lead_time = 9 #lead time in years, currently only used for dcppA experiments
 
 #save monthly counts for all 27 types
 tarwts = np.arange(1,28) #The full LWT scheme will be considered, 1 = PA, 27 = U

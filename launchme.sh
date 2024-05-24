@@ -6,7 +6,7 @@
 source ${HOME}/.bashrc
 
 #input parameters
-mode='interpolate' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse',get_csd_local or 'map_lowfreq_var'
+mode='decadal_skill_maps' #set script to be run. Either 'interpolate', 'makecalcs', 'analyse', 'get_csd_local', 'map_lowfreq_var' or 'decadal_skill_maps'
 
 #check python version
 echo "Your Python version is:"

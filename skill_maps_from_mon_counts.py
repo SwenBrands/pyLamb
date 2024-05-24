@@ -24,12 +24,12 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 
 #set input parameter
 obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
-ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
-experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_5','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
-lead_time = [1,2,3,5,10,None] #lead time or forecast year or the dcppA LWT data
-start_years = [1961,1962,1963,1965,1970,1961] #list containing the start years of the experiment defined in <experiment>
-end_years = [2019,2020,2021,2023,2028,2028] #list containing the end years of the experiment defined in <experiment>
+ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_4','dcppA_5','dcppA_6','dcppA_7','dcppA_8','dcppA_9','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+lead_time = [1,2,3,4,5,6,7,8,9,10,None] #lead time or forecast year or the dcppA LWT data
+start_years = [1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1961] #list containing the start years of the experiment defined in <experiment>
+end_years = [2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2028] #list containing the end years of the experiment defined in <experiment>
 
 # ensemble_color = ['orange','red','black','grey','blue']
 # ensemble_linestyle = ['dashed','dashed','dashed','solid','dotted']

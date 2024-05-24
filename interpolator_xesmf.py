@@ -38,7 +38,7 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
 experiment = 'dcppA' #historical, 20c, amip, piControl, ssp245, ssp585, rcp85, dcppA
-lead_time = 3 #lead time in years, only applied if experiment = 'dcppA'
+lead_time = 9 #lead time in years, only applied if experiment = 'dcppA'
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
 hemis = 'sh'
