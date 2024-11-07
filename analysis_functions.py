@@ -8,6 +8,9 @@ def get_location(location_f):
     elif location_f == 'Azores':
         tarlat_f = 38.305542
         tarlon_f = -30.384108
+    elif location_f == 'Barcelona':
+        tarlat_f = 41.390205
+        tarlon_f = 2.154007
     elif location_f == 'Bergen':
         tarlat_f = 60.397076
         tarlon_f = 5.324383
@@ -17,39 +20,39 @@ def get_location(location_f):
     elif location_f == 'Casablanca':
         tarlat_f = 33.589886
         tarlon_f = -7.603869
+    elif location_f == 'Madrid':
+        tarlat_f = 40.4169644
+        tarlon_f = -3.7035621
+    elif location_f == 'NYC':
+        tarlat_f = 40.71427
+        tarlon_f = -74.00597
     elif location_f == 'Paris':
         tarlat_f = 48.85341
         tarlon_f = 2.3488
     elif location_f == 'Prague':
         tarlat_f = 50.0833
         tarlon_f = 14.4167
-    elif location_f == 'Barcelona':
-        tarlat_f = 41.390205
-        tarlon_f = 2.154007
-    elif location_f == 'Wellington':
-        tarlat_f = -41.2889
-        tarlon_f = 174.7772
-    elif location_f == 'SantiagoDC':
-        tarlat_f = 42.8805
-        tarlon_f = -8.5457
     elif location_f == 'Santander':
         tarlat_f = 43.462776
         tarlon_f = -3.805000
+    elif location_f == 'SantiagoDC':
+        tarlat_f = 42.8805
+        tarlon_f = -8.5457
     elif location_f == 'Seattle':
         tarlat_f = 47.608013
         tarlon_f = -122.335167
+    elif location_f == 'San_Francisco':
+        tarlat_f = 37.773972
+        tarlon_f = -122.431297
     elif location_f == 'Tokio':
         tarlat_f = 35.652832
         tarlon_f = 139.839478
-    elif location_f == 'San Francisco':
-        tarlat_f = 37.773972
-        tarlon_f = -122.431297
-    elif location_f == 'NYC':
-        tarlat_f = 40.71427
-        tarlon_f = -74.00597
-    elif location_f == 'Weddell Sea':
+    elif location_f == 'Weddell_Sea':
         tarlat_f = -69.51251
         tarlon_f = -54.75038
+    elif location_f == 'Wellington':
+        tarlat_f = -41.2889
+        tarlon_f = 174.7772
     else:
         raise Exception('ERROR: check entry for <location_f>!')
     return(tarlat_f,tarlon_f)

@@ -16,24 +16,26 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 
 #set input parameters
 region1 = 'nh' #region 1 as defined in analysis_functions.py
-region2 = 'sh_midlats' #region 2 as defined in analysis_functions.py
+region2 = 'sh' #region 2 as defined in analysis_functions.py
 tarwts_various = [[7,15,24],[1],[18]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 # tarwts_various = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27]] #list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #loop through various seasons for exploratory data analysis
 # tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
 taryears = [1950,2010] #start and end yeartaryears = [1979,2005] #start and end year
-aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
+aggreg = '10' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
 fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
 wtnames = ['PA','DANE','DAE','DASE','DAS','DASW','DAW','DANW','DAN','PDNE','PDE','PDSE','PDS','PDSW','PDW','PDNW','PDN','PC','DCNE','DCE','DCSE','DCS','DCSW','DCW','DCNW','DCN','U']
 ensemble_label = 'CERA-20C' #used for plotting purpose only
-model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
-mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
-#model = ['cera20c','cera20c']
-#mrun = ['m0','m1']
+
+# model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
+# mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
+model = ['cera20c','cera20c']
+mrun = ['m0','m1']
 # model = ['era5']
 # mrun = ['r1i1p1']
-# experiment = 'historical' #historical, 20c, amip, ssp245, ssp585
+
+experiment = 'historical' #historical, 20c, amip, ssp245, ssp585
 experiment = '20c'
 meanperiod = 10 #used to calculate the rolling mean WT counts for the temporally aggregated data as defined in <aggreg> above, .e.g. 10
 latweighting = 'yes' #weight the point-wise WT counts by latitude prior to summing over the entire domain
@@ -42,7 +44,7 @@ rollw = 21 #rolling window in days used to calculate the climatological mean whi
 
 #options used for periodgram, experimental so far
 fs = 1 #sampling frequency used for calcluating power and cross-power spectra; is applied on temporally aggregated values as defined by <aggreg> above
-nfft_quotient = 10 #integer setting the quotient or None for default options, this is the fraction of the time series used as lenght of the FFT, 4 is recommended by Schönwiese 2006; if set to None, the default nfft option is used in signal.periodgram(). This option is not used in signal.csd() which always assumes None / default options 
+nfft_quotient = None #integer setting the quotient or None for default options, this is the fraction of the time series used as lenght of the FFT, 4 is recommended by Schönwiese 2006; if set to None, the default nfft option is used in signal.periodgram(). This option is not used in signal.csd() which always assumes None / default options 
 scaling = 'spectrum'
 detrend = 'constant' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 window = 'hamming' #hamming or hann
@@ -52,7 +54,7 @@ cutoff = [] #defines where the x-axis is cut-off in the time-series plots, [] fo
 
 #visualization options
 dpival = 300 #resolution of the output figure in dots per inch
-outformat = 'png' #png, pdf, etc.
+outformat = 'pdf' #png, pdf, etc.
 titlesize = 8. #Font size of the titles in the figures
 
 #execute ###############################################################################################

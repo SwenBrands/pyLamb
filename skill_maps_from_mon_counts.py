@@ -24,10 +24,17 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 
 #set input parameter
 obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
+
 ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
 experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
 experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_4','dcppA_5','dcppA_6','dcppA_7','dcppA_8','dcppA_9','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
 lead_time = [1,2,3,4,5,6,7,8,9,10,None] #lead time or forecast year or the dcppA LWT data
+
+#ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+#experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+#experiment_out = ['dcppA_1','dcppA_2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+#lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
+
 start_years = [1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1961] #list containing the start years of the experiment defined in <experiment>
 end_years = [2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2028] #list containing the end years of the experiment defined in <experiment>
 
@@ -62,7 +69,7 @@ rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
 
 #set options for statistical analysis
 correlation_type = 'Pearson' #Pearson or Spearman, type of correlation coefficient to be calculated below; note that most of the applied significance tests are only valid for the Pearson correlation coefficient, strictly speaking.
-rpc_method = 'Eade' #Scaife or Eade; Scaife: predictable component in observations (first term) based on explained variance, i.e. negative correlation coefficients contribute the same as positive values to the RPC; Eade, prectiable component based on observations based on correlation coeffcient
+rpc_method = 'Scaife' #Scaife or Eade; Scaife: predictable component in observations (first term) based on explained variance, i.e. negative correlation coefficients contribute the same as positive values to the RPC; Eade, prectiable component based on observations based on correlation coeffcient
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
@@ -366,7 +373,8 @@ rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach=rpc_method) #rpc is t
 if rpc_method == 'Eade':
     p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
 elif rpc_method == 'Scaife':
-    p_value_rpc = pvalue_correlation_diff(np.sqrt(pearson_r), np.sqrt(pc_mod), len(wt_mod.time), len(wt_mod.time))
+    #p_value_rpc = pvalue_correlation_diff(np.sqrt(pearson_r), np.sqrt(pc_mod), len(wt_mod.time), len(wt_mod.time))
+    p_value_rpc = pvalue_correlation_diff(np.abs(pearson_r), np.abs(pc_mod), len(wt_mod.time), len(wt_mod.time))
 else:
     raise Exception('ERROR: check entry for <rpc_method> input parameter !')
 rpc_sigind = p_value_rpc < (1-test_level/100)

@@ -20,15 +20,15 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 ensemble = 'cera20c' #cera20c or mpi_esm_1_2_hr or ec_earth3
 experiment = '20c' #historical, amip, piControl, 20c or dcppA
 #city = ['Barcelona','Bergen','Paris','Prague'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-city = ['Wellington']
+#city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio','Wellington'] #city or point of interest
+city = ['Madrid']
 
 tarmonths = [1,2,3,4,5,6,7,8,9,10,11,12] #target months
 taryears = [1901,2010] #start and end year, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 lead_time = 10 #currently only used for experiment = dcppA; this is the lead time of the forecasts that were concatenated to form a single continuous time series in interpolator_xesmf.py
-tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte
+tarwts = [18] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, if various LWTs are indicated in the list, then their sum will be treated. In this script, they are not treated separately
 center_wrt = 'ensemble_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
-nfft_quotients = [4] # n / nff_quotient equals the length of the maximum period; nfft_quotient = number of non-overlapping sub-periods used by the Welch method
+nfft_quotients = [2] # n / nff_quotient equals the length of the maximum period; nfft_quotient = number of non-overlapping sub-periods used by the Welch method
 
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
@@ -40,7 +40,7 @@ periodogram_type = 'periodogram' #Welch or periodogram
 fs = 1 #sampling frequency for 3-hourly data, 30*8 is monthly, 90*8 is seasonal, alternatively 1 for yearly data
 window = 'hann' #hann, nuttall etc. http://qingkaikong.blogspot.com/2017/01/signal-processing-finding-periodic.html
 scaling = 'spectrum'
-repetitions = 30 #10000 is ideal
+repetitions = 10000 #10000 is ideal
 detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 ci_percentiles = [2.5,5.,10.,90.,95.,97.5] #these crtical values for power spectra will be calculated
 ci_tar_percentile = 95. #and this one will be plotted
@@ -297,7 +297,7 @@ for qq in np.arange(len(nfft_quotients)):
         plt.xlabel('Period ('+ag_label+')')
         plt.xticks(ticks=fq[0,:],labels=x_labels,rotation=rotation,fontsize=6)
         plt.ylabel(ylabel_p)
-        titlelabel = periodogram_type+' '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' '+window+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom
+        titlelabel = periodogram_type+' '+wtlabel+' '+city[cc].replace('_',' ')+' '+model_label+' '+str(len(mrun))+'m '+str(taryears[0])+'-'+str(taryears[1])+' '+seaslabel+' '+aggreg+' '+window+' nfft'+str(nfft)+' dtrend'+detrend+' anom'+anom
         plt.title(titlelabel,size=titlesize)
         if experiment == 'dcppA':
             savename_pd = periodogram_dir+'/'+periodogram_type+'_'+model[mm]+'_'+experiment+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(lead_time)+'y_'+str(taryears[0])+'_'+str(taryears[1])+'_'+reshuffling+'_'+seaslabel+'_'+aggreg+'_'+window+'_nfft_'+str(nfft)+'_dtrend_'+detrend+'_anom_'+anom+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
@@ -363,7 +363,7 @@ for qq in np.arange(len(nfft_quotients)):
         plt.xticks(ticks=years[9::10],labels=years[9::10])
         plt.xlim([years.min(),years.max()])
         plt.ylim([wt_agg.min(),wt_agg.max()])
-        plt.title('LWT '+wtlabel+' '+city[cc]+' '+model_label+' '+str(len(mrun))+' members '+str(taryears[0])+'-'+str(taryears[1]))
+        plt.title('LWT '+wtlabel+' '+city[cc].replace('_',' ')+' '+model_label+' '+str(len(mrun))+' members '+str(taryears[0])+'-'+str(taryears[1]))
         text_x = np.percentile(years,70) # x coordinate of text inlet
         text_y = wt_agg.values.max() - (wt_agg.values.max() - wt_agg.values.min())/25 # y coordinate of text inlet
         #plt.text(text_x,text_y, '$\sigma$ / $\mu$ = '+str(np.round(np.nanstd(runmeans)/np.nanmean(runmeans),3)),size=8) #plot standard deviation of running ensemble mean time series as indicator of forced response
