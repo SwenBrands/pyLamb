@@ -25,15 +25,15 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 #set input parameter
 obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
 
-ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
-experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_4','dcppA_5','dcppA_6','dcppA_7','dcppA_8','dcppA_9','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
-lead_time = [1,2,3,4,5,6,7,8,9,10,None] #lead time or forecast year or the dcppA LWT data
+# ensemble = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+# experiment = ['dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+# experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_4','dcppA_5','dcppA_6','dcppA_7','dcppA_8','dcppA_9','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+# lead_time = [1,2,3,4,5,6,7,8,9,10,None] #lead time or forecast year or the dcppA LWT data
 
-#ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
-#experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
-#experiment_out = ['dcppA_1','dcppA_2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
-#lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
+ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+experiment_out = ['dcppA_1','dcppA_2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
 
 start_years = [1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1961] #list containing the start years of the experiment defined in <experiment>
 end_years = [2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2028] #list containing the end years of the experiment defined in <experiment>
@@ -69,7 +69,7 @@ rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
 
 #set options for statistical analysis
 correlation_type = 'Pearson' #Pearson or Spearman, type of correlation coefficient to be calculated below; note that most of the applied significance tests are only valid for the Pearson correlation coefficient, strictly speaking.
-rpc_method = 'Scaife' #Scaife or Eade; Scaife: predictable component in observations (first term) based on explained variance, i.e. negative correlation coefficients contribute the same as positive values to the RPC; Eade, prectiable component based on observations based on correlation coeffcient
+rpc_method = 'Cottrell' #Scaife, Eade or Cottrell; Scaife: predictable component in observations (first term) based on explained variance, i.e. negative correlation coefficients contribute the same as positive values to the RPC; Eade, prectiable component based on observations based on correlation coeffcient
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 meanperiod = 10 #running-mean period in years
 std_critval = 1.28 #1 = 68%, 1.28 = 80 %, 2 = 95%; standard deviation used to define the critical value above or below which the signal-to-noise ratio is assumed to be significant.
@@ -354,23 +354,12 @@ elif correlation_type == 'Spearman':
 else:
     raise Exception('ERROR: check entry for <correlation_type> input parameter !')
 
-# ## RPC calculated with ensemble mean and total variance following Eade et al. 2014, see equation 1 in doi:10.1002/2014GL061146
-# var_sig = wt_mod_mean.var(dim='time') #calculate the variance of the ensemble-mean time series
-# var_tot = wt_mod.var(dim='time').mean(dim='run_index') #calculate the mean of the individual members' variance
-# rpc = pearson_r / np.sqrt(var_sig / var_tot) #calculate the RPC based on signal / total model variance
-# pc_mod = np.sqrt(var_sig/var_tot) #modelled predictable componenent, i.e. potential predictability
-
-# ## RPC according to equation 5 in Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4
-# pc_mod_scaife = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).mean(dim='run_index').rename('pearson_r')
-# rpc_rho = (pearson_r / pc_mod).rename('rpc_based_on_rho') #calculate the RPC based on the average correlation coefficient between the signal and individual members
-# rpc_expvar = np.sqrt(pearson_r**2 / pc_mod**2).rename('rpc_based_on_explained_var') #calculate the RPC based on explained variance
-
 # get rpc from function according to Eade et al. 2014, doi:10.1002/2014GL061146, equation 1 and Scaife et al. 2018, https://doi.org/10.1038/s41612-018-0038-4, equation 5
 rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r,approach=rpc_method) #rpc is the ratio of predictable componentes and pc_mod the modelled preditable component, pearson_r is the observed predictable component
 # rpc,pc_mod = get_rpc(wt_mod,wt_mod_mean,pearson_r.where(pearson_r >= 0, other = 0),approach='Eade')
 
 #get pvalues for the rpc and the corresponding boolean (True / False) significance mask
-if rpc_method == 'Eade':
+if rpc_method in ('Eade','Cottrell'):
     p_value_rpc = pvalue_correlation_diff(pearson_r, pc_mod, len(wt_mod.time), len(wt_mod.time))
 elif rpc_method == 'Scaife':
     #p_value_rpc = pvalue_correlation_diff(np.sqrt(pearson_r), np.sqrt(pc_mod), len(wt_mod.time), len(wt_mod.time))
@@ -379,49 +368,6 @@ else:
     raise Exception('ERROR: check entry for <rpc_method> input parameter !')
 rpc_sigind = p_value_rpc < (1-test_level/100)
 rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_of_diff_modelled_vs_observed_pc')
-
-# #get critical values for the RPC following the supplementary material available from Eade et al. 2014, doi:10.1002/2014GL061146, available at https://agupubs.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1002%2F2014GL061146&file=Eade_070714_AUXILIARY_MATERIAL.pdf
-# rpc = get_rpc(wt_mod,wt_mod_mean,pearson_r)
-# ntime = len(wt_mod.time)
-# nmem = len(wt_mod.run_index)
-# #orig_run_index = wt_mod.run_index.values #for use with all members
-# orig_run_index = wt_mod.run_index.values[0:nmem-exclude_members] #for use with a sub-selection of members
-# orig_time = wt_mod.time.values
-# rpc_rand = np.zeros((repetitions,rpc.shape[0],rpc.shape[1],rpc.shape[2],rpc.shape[3],rpc.shape[4]))
-# for rr in list(np.arange(repetitions)):
-    # #reshuffle
-    # rand1 = np.random.randint(0,ntime,ntime)
-    # #rand2 = np.random.randint(0,nmem,nmem) #reshuffle all ensemble members
-    # rand2 = np.random.randint(0,nmem-exclude_members,nmem-exclude_members) #reshuffle of fraction of ensemble members only
-    # wt_mod_rand = wt_mod[:,:,:,:,rand1,:,:] #reshuffle the time instances (years)
-    # wt_mod_rand = wt_mod_rand[:,:,:,rand2,:,:,:] #reshuffle the members
-    # wt_mod_rand.time.values[:] = orig_time #nominally get back original <time> dimension in ascending order for xskillsore to work below
-    # wt_mod_rand.run_index.values[:] = orig_run_index #nominally get back original <run_index> dimension in ascending order for xskillsore to work below
-    
-    # wt_mod_mean_rand = wt_mod_rand.mean(dim='run_index') #calculate the ensemble-mean of the reshuffled model array
-    # #get random scores
-    # pearson_r_rand = xs.pearson_r(wt_obs,wt_mod_mean_rand,dim='time',skipna=True).rename('pearson_r')
-    # rpc_rand_step = get_rpc(wt_mod_rand,wt_mod_mean_rand,pearson_r_rand) #use reshuffled model array to obtain the total variance
-    # #rpc_rand_step = get_rpc(wt_mod,wt_mod_mean_rand,pearson_r_rand) #use original model array to obtain the total variance 
-    
-    # #assign
-    # rpc_rand[rr,:,:,:,:] = rpc_rand_step
-    # #and clean
-    # rpc_rand_step.close()
-    # wt_mod_rand.close()
-    # wt_mod_mean_rand.close()
-    # del(rpc_rand_step,wt_mod_rand,wt_mod_mean_rand,rand1,rand2)
-# #get the critical values and significance True False used below for plotting above the rpc countour
-# rpc_critval = np.nanpercentile(rpc_rand,[test_level/2,100-test_level/2],axis=0) #quantiles must be given as percentage value (0-100), e.g. 2.5 and 97.5 for a test-level of 5% and a two-sided configuration
-# # sig_below_one_ind = np.where((rpc_critval[0,:,:,:,:,:] < 1) & (rpc_critval[1,:,:,:,:,:] < 1))
-# # sig_greater_one_ind = np.where((rpc_critval[0,:,:,:,:,:] > 1) & (rpc_critval[1,:,:,:,:,:] > 1))
-# sig_below_one_ind = (rpc_critval[0,:,:,:,:,:] < 1) & (rpc_critval[1,:,:,:,:,:] < 1)
-# sig_greater_one_ind = (rpc_critval[0,:,:,:,:,:] > 1) & (rpc_critval[1,:,:,:,:,:] > 1)
-# rpc_sigind = np.zeros(sig_below_one_ind.shape,dtype='bool')
-# rpc_sigind[sig_below_one_ind] = True
-# rpc_sigind[sig_greater_one_ind] = True
-# #rpc_sigind = (rpc < rpc_critval[0,:,:,:,:,:]) | (rpc > rpc_critval[1,:,:,:,:,:]) #check whether the actual rpc is smaller than the lower percentile or larger then the upper percentile, in which case it signifcantly differes from 0
-# rpc_sigind = xr.DataArray(rpc_sigind,coords=rpc.coords,dims=rpc.dims,name='sig_diff_from_1')
 
 #and plot the results
 for lwt in np.arange(len(tarwts_name)):
@@ -653,7 +599,7 @@ for sea in np.arange(len(seasons)):
         #then plot
         if rpc_method == 'Scaife':
             minval_rpc = -0.1
-        elif rpc_method == 'Eade':
+        elif rpc_method in ('Eade','Cottrell'):
             minval_rpc = rpc.min()
         else:
             raise Excecption('ERROR: check entry for <rpc_method> input parameter !')
@@ -664,6 +610,38 @@ for sea in np.arange(len(seasons)):
         #and clean
         rpc_nh_step.close()
         rpc_sh_step.close()
+
+#calculate pattern correlation between skill and ration of predictable components, do this for the entire domain (NH+SH) and separately for NH and SH
+pattern_r_rho_rpc = xr.corr(rho.stack(lon_lat=('lon','lat')),rpc.stack(lon_lat=('lon','lat')),dim='lon_lat')
+#pattern_r_rho_rpc_nh = xr.corr(rho.isel(lat=np.where(rho.lat>0)[0]).stack(lon_lat=('lon','lat')),rpc.isel(lat=np.where(rpc.lat>0)[0]).stack(lon_lat=('lon','lat')),dim='lon_lat')
+#pattern_r_rho_rpc_sh = xr.corr(rho.isel(lat=np.where(rho.lat<0)[0]).stack(lon_lat=('lon','lat')),rpc.isel(lat=np.where(rpc.lat<0)[0]).stack(lon_lat=('lon','lat')),dim='lon_lat')
+pattern_r_rho_rpc_nh = xr.corr(rho_nh.stack(lon_lat=('lon','lat')),rpc_nh.stack(lon_lat=('lon','lat')),dim='lon_lat')
+pattern_r_rho_rpc_sh = xr.corr(rho_sh.stack(lon_lat=('lon','lat')),rpc_sh.stack(lon_lat=('lon','lat')),dim='lon_lat')
+
+# #make a global scatter plot skill against rpc
+# fig = plt.figure()
+# #plot each season with a different colour
+# for sea in np.arange(len(seasons)):
+#     plt.scatter(rho.sel(season=seasons[sea]).stack(lwt_season_experiment_lon_lat = ('lwt','experiment','lon','lat')).values,rpc.sel(season=seasons[sea]).stack(lwt_season_experiment_lon_lat = ('lwt','season','experiment','lon','lat')).values)
+# plt.xlabel('Hindcast correlation')
+# plt.ylabel('RPC')
+# plt.legend(seasons)
+# savename_scatter = figs+'/rho_vs_'+rpc_method+'+global.pdf'
+# plt.savefig(savename_scatter,dpi=dpival)
+# plt.close('all')
+# del(savename_scatter)
+
+for exp in np.arange(len(experiment_out)):
+    for sea in np.arange(len(seasons)):
+        fig = plt.figure()
+        plt.scatter(rho.sel(experiment=experiment_out[exp],season=seasons[sea]).stack(lwt_lon_lat = ('lwt','lon','lat')).values,rpc.sel(experiment=experiment_out[exp],season=seasons[sea]).stack(lwt_lon_lat = ('lwt','lon','lat')).values)
+        plt.title('Skill vs. RPC for '+experiment_out[exp]+' in '+seasons[sea])
+        plt.xlabel('Hindcast correlation')
+        plt.ylabel('RPC')
+        savename_scatter = figs+'/'+experiment[exp]+'/global/rho_vs_'+rpc_method+'_global_'+experiment_out[exp]+'_season_'+seasons[sea]+'.pdf'
+        plt.savefig(savename_scatter,dpi=dpival)
+        plt.close('all')
+        del(savename_scatter)
 
 #clean remaining xarray objects
 wt_mod_noise_tmean.close()
@@ -695,5 +673,8 @@ wt_mod_noise.close()
 wt_mod_mean.close()
 #wt_mod_std.close()
 wt_mod_snr.close()
+pattern_r_rho_rpc.close()
+pattern_r_rho_rpc_nh.close()
+pattern_r_rho_rpc_sh.close()
 
 print('INFO: skill_maps_from_mon_counts.py has run successfully!')

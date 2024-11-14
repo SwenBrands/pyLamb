@@ -796,11 +796,13 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
     ax = fig.add_subplot(111, projection=map_proj_f)
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy_f.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
     ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
-            
+    
     image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
+    #image = ax.contourf(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
+    
     #get size of the points indicating significance
     if halfres_f < 1.:
-        pointsize_f = 0.25
+        pointsize_f = 0.25 #0.5
         marker_f = '+'
     else:
         pointsize_f = 1 #0.25
@@ -811,7 +813,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
     else:
         toplayer_x = xx_f.flatten()[agree_ind.flatten()]
         toplayer_y = yy_f.flatten()[agree_ind.flatten()]
-        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+        ax.plot(toplayer_x, toplayer_y, color='white', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
         #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
     if origpoint is None:
         print('No <origpoint> was found by get_map_lowfreq_var() function !')
@@ -880,7 +882,7 @@ def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,approach='Eade'):
     <xr_mod_f> contains the memberwise time-series of the ensemble, <xr_mod_mean_f> contains the ensemble-mean time series averaged year-to-year over all members, and <xr_pearson_r_f>
     the Pearson correlation coefficient of the ensemble-mean time-series with the observations i.e. the observed predictable component; all the 3 objects are xarray DataArrays'''    
     if approach == 'Eade':
-        ##Eade et al. 2014 approach
+        ##following Eade et al. 2014, https://doi.org/10.1002%2F2014GL061146, equation 1
         var_sig_f = xr_mod_mean_f.var(dim='time') #calculate the variance of the ensemble-mean time series
         var_tot_f = xr_mod_f.var(dim='time').mean(dim='run_index') #calculates the mean of the individual members' variance
         pc_mod_f = np.sqrt(var_sig_f / var_tot_f) #modelled predictable component, equivalent to perfect skill or potential skill
@@ -888,15 +890,13 @@ def get_rpc(xr_mod_f,xr_mod_mean_f,xr_pearson_r_f,approach='Eade'):
         var_sig_f.close()
         var_tot_f.close()
         del(var_sig_f,var_tot_f)
-    elif approach == 'Scaife':
-        ##Scaife et al. 2018, equation 5 working with correlation coefficient
+    elif approach == 'Cottrell':
+        # following Cottrell et al. 2023, https://doi.org/10.1002/asl.1212, equation 3 working with the correlation coefficient
         pc_mod_f = xs.pearson_r(xr_mod_f,xr_mod_mean_f,dim='time',skipna=True).rename('pearson_r').mean(dim='run_index') #calculate the correlation coefficient between the multi-model mean and each member and take the mean along all members obtaining the modelled predictable component
-        rpc_f = np.sqrt(xr_pearson_r_f**2 / pc_mod_f**2).rename('rpc_scaife') #calculate the RPC
-    # elif approach == 'Scaife_expvar'
-        # ## RPC calculated with mean explained variance
-        # expvar_mod = xs.pearson_r(wt_mod,wt_mod_mean_mem,dim='time',skipna=True).rename('pearson_r')**2 #caculate explained variances between the multi-model mean and each member
-        # expvar_mod_mean = expvar_mod.mean(dim='run_index') #get the mean of these explained variances
-        # rpc = np.sqrt(pearson_r**2 / expvar_mod_mean).rename('rpc') #calculate the RPC
+        rpc_f = (xr_pearson_r_f / pc_mod_f).rename('rpc_scaife') #calculate the RPC
+    elif approach == 'Scaife':
+        # following Scaife & Smith 2018, equation 5 working with explained variance
+        rpc_f = np.sqrt(xr_pearson_r_f**2 / pc_mod_f**2).rename('rpc_scaife_expvar') #calculate the RPC
     else:
         raise Exception('ERROR: check entry for <approach> input parameter in the get_rpc() function !')
     
