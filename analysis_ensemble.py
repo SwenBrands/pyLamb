@@ -26,10 +26,11 @@ exec(open('analysis_functions.py').read())
 #mrun = ['r2i1p1f1']
 
 filesystem = 'lustre' #set the filesystem in use, currently, extdisk or lustre
-taryears=['1979', '2005']
+taryears = ['1979', '2005'] #start and end years of the performance analysis, for catalogues available from 1979 to 2005, i.e. the common period of the historical experiments from CMIP5 and 6
 alt_taryears=['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
+alt_taryears_2=['1979', '2014'] ##alternative start and end years, used for those catalogues available from 1979 to 2014
 fliersize = 0.5
-textsize = 3.
+textsize = 2. #3 for visualization without the 50 CESM2 members
 textsize2 = 5.
 figformat = 'pdf'
 dpival = 300
@@ -37,7 +38,7 @@ classes_needed = 27 #20 for southern hemisphere
 minfreq = 0.001
 snapval = True #to be used in pcolormesh
 errortype = 'MAE' #MAE or KL
-region = 'eurocordex' #nh, sh, escena, both or eurocordex
+region = 'cordexna' #nh, sh, escena, both, eurocordex or cordexna
 cbounds_mae = np.linspace(0,1.7,18)
 cbounds_kl = np.linspace(0,0.2,21)
 #colormap1 = crea_cmap(cbounds1, rgbs, under, over)
@@ -69,14 +70,14 @@ shrinkfactor = 0.6
 # cmip = access_esm1_5_cmip+hadgem2_es_cmip+mpi_esm_1_2_lr_cmip+mpi_esm_1_2_hr_cmip+nesm3_cmip+noresm2_lm_cmip+noresm2_mm_cmip+ec_earth3_cmip+cnrm_cm6_1_cmip+ipsl_cm5a_lr_cmip+ipsl_cm6a_lr_cmip+miroc_es2l_cmip+mri_esm2_0_cmip
 # marker = access_esm1_5_marker+hadgem2_es_marker+mpi_esm_1_2_lr_marker+mpi_esm_1_2_hr_marker+nesm3_marker+noresm2_lm_marker+noresm2_mm_marker+ec_earth3_marker+cnrm_cm6_1_marker+ipsl_cm5a_lr_marker+ipsl_cm6a_lr_marker+miroc_es2l_marker+mri_esm2_0_marker
 
-model = mpi_esm_1_2_lr_ens+mpi_esm_1_2_hr_ens+nesm3_ens+noresm2_lm_ens+noresm2_mm_ens+ec_earth3_ens+ec_earth3_veg_ens+cnrm_cm6_1_ens+ipsl_cm5a_lr_ens+ipsl_cm6a_lr_ens+miroc_es2l_ens+mri_esm2_0_ens
-experiment = mpi_esm_1_2_lr_exp+mpi_esm_1_2_hr_exp+nesm3_exp+noresm2_lm_exp+noresm2_mm_exp+ec_earth3_exp+ec_earth3_veg_exp+cnrm_cm6_1_exp+ipsl_cm5a_lr_exp+ipsl_cm6a_lr_exp+miroc_es2l_exp+mri_esm2_0_exp
-mrun = mpi_esm_1_2_lr_mrun+mpi_esm_1_2_hr_mrun+nesm3_mrun+noresm2_lm_mrun+noresm2_mm_mrun+ec_earth3_mrun+ec_earth3_veg_mrun+cnrm_cm6_1_mrun+ipsl_cm5a_lr_mrun+ipsl_cm6a_lr_mrun+miroc_es2l_mrun+mri_esm2_0_mrun
-family = mpi_esm_1_2_lr_family+mpi_esm_1_2_hr_family+nesm3_family+noresm2_lm_family+noresm2_mm_family+ec_earth3_family+ec_earth3_veg_family+cnrm_cm6_1_family+ipsl_cm5a_lr_family+ipsl_cm6a_lr_family+miroc_es2l_family+mri_esm2_0_family
-rgb = mpi_esm_1_2_lr_rgb+mpi_esm_1_2_hr_rgb+nesm3_rgb+noresm2_lm_rgb+noresm2_mm_rgb+ec_earth3_rgb+ec_earth3_veg_rgb+cnrm_cm6_1_rgb+ipsl_cm5a_lr_rgb+ipsl_cm6a_lr_rgb+miroc_es2l_rgb+mri_esm2_0_rgb
-cmip = mpi_esm_1_2_lr_cmip+mpi_esm_1_2_hr_cmip+nesm3_cmip+noresm2_lm_cmip+noresm2_mm_cmip+ec_earth3_cmip+ec_earth3_veg_cmip+cnrm_cm6_1_cmip+ipsl_cm5a_lr_cmip+ipsl_cm6a_lr_cmip+miroc_es2l_cmip+mri_esm2_0_cmip
-marker = mpi_esm_1_2_lr_marker+mpi_esm_1_2_hr_marker+nesm3_marker+noresm2_lm_marker+noresm2_mm_marker+ec_earth3_marker+ec_earth3_veg_marker+cnrm_cm6_1_marker+ipsl_cm5a_lr_marker+ipsl_cm6a_lr_marker+miroc_es2l_marker+mri_esm2_0_marker
-gcm_name = mpi_esm_1_2_lr_name+mpi_esm_1_2_hr_name+nesm3_name+noresm2_lm_name+noresm2_mm_name+ec_earth3_name+ec_earth3_veg_name+cnrm_cm6_1_name+ipsl_cm5a_lr_name+ipsl_cm6a_lr_name+miroc_es2l_name+mri_esm2_0_name
+model = cesm2_ens + mpi_esm_1_2_lr_ens + mpi_esm_1_2_hr_ens + nesm3_ens + noresm2_lm_ens + noresm2_mm_ens + ec_earth3_ens + ec_earth3_veg_ens + cnrm_cm6_1_ens + ipsl_cm5a_lr_ens + ipsl_cm6a_lr_ens + miroc6_ens + miroc_es2l_ens + mri_esm2_0_ens
+experiment = cesm2_exp + mpi_esm_1_2_lr_exp + mpi_esm_1_2_hr_exp + nesm3_exp + noresm2_lm_exp + noresm2_mm_exp + ec_earth3_exp + ec_earth3_veg_exp + cnrm_cm6_1_exp + ipsl_cm5a_lr_exp + ipsl_cm6a_lr_exp + miroc6_exp + miroc_es2l_exp + mri_esm2_0_exp
+mrun = cesm2_mrun + mpi_esm_1_2_lr_mrun + mpi_esm_1_2_hr_mrun + nesm3_mrun + noresm2_lm_mrun + noresm2_mm_mrun + ec_earth3_mrun + ec_earth3_veg_mrun + cnrm_cm6_1_mrun + ipsl_cm5a_lr_mrun + ipsl_cm6a_lr_mrun + miroc6_mrun + miroc_es2l_mrun + mri_esm2_0_mrun
+family = cesm2_family + mpi_esm_1_2_lr_family + mpi_esm_1_2_hr_family + nesm3_family + noresm2_lm_family + noresm2_mm_family + ec_earth3_family + ec_earth3_veg_family + cnrm_cm6_1_family + ipsl_cm5a_lr_family + ipsl_cm6a_lr_family + miroc6_family + miroc_es2l_family + mri_esm2_0_family
+rgb = cesm2_rgb + mpi_esm_1_2_lr_rgb + mpi_esm_1_2_hr_rgb + nesm3_rgb + noresm2_lm_rgb + noresm2_mm_rgb + ec_earth3_rgb + ec_earth3_veg_rgb + cnrm_cm6_1_rgb + ipsl_cm5a_lr_rgb + ipsl_cm6a_lr_rgb + miroc6_rgb + miroc_es2l_rgb + mri_esm2_0_rgb
+cmip = cesm2_cmip + mpi_esm_1_2_lr_cmip + mpi_esm_1_2_hr_cmip + nesm3_cmip + noresm2_lm_cmip + noresm2_mm_cmip + ec_earth3_cmip + ec_earth3_veg_cmip + cnrm_cm6_1_cmip + ipsl_cm5a_lr_cmip + ipsl_cm6a_lr_cmip + miroc6_cmip + miroc_es2l_cmip + mri_esm2_0_cmip
+marker = cesm2_marker + mpi_esm_1_2_lr_marker + mpi_esm_1_2_hr_marker + nesm3_marker + noresm2_lm_marker + noresm2_mm_marker + ec_earth3_marker + ec_earth3_veg_marker + cnrm_cm6_1_marker + ipsl_cm5a_lr_marker + ipsl_cm6a_lr_marker + miroc6_marker + miroc_es2l_marker + mri_esm2_0_marker
+gcm_name = cesm2_name + mpi_esm_1_2_lr_name + mpi_esm_1_2_hr_name + nesm3_name + noresm2_lm_name + noresm2_mm_name + ec_earth3_name + ec_earth3_veg_name + cnrm_cm6_1_name + ipsl_cm5a_lr_name + ipsl_cm6a_lr_name + miroc6_name + miroc_es2l_name + mri_esm2_0_name
 
 # model = ec_earth3_ens+ec_earth3_veg_ens
 # experiment = ec_earth3_exp+ec_earth3_veg_exp
@@ -110,10 +111,16 @@ print('INFO: output figures will be saved in '+figfolder+' as '+figformat)
 print('INFO: minimum frequency is '+str(minfreq)+' for '+str(classes_needed)+' LWTs')
 print('INFO: target years are '+taryears[0]+' to '+taryears[1])
 
+#create output directories if necessary
+if os.path.isdir(figpath+'/'+figfolder+'/'+region+'/maps') != True:
+    os.makedirs(figpath+'/'+figfolder+'/'+region+'/maps')
+if os.path.isdir(figpath+'/'+figfolder+'/'+region+'/taylor') != True:
+    os.makedirs(figpath+'/'+figfolder+'/'+region+'/taylor')
+
 csvfile = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_ensemble_ref_'+refdata+'_'+region+'.csv' #path of the csv file containing the median error for each model
 yamlfile = figpath+'/'+figfolder+'/'+region+'/'+errortype+'_ensemble_ref_'+refdata+'_'+region+'.yaml' #path of the csv file containing the median error for each model
 
-if region in ('nh','eurocordex','namerica','escena'):
+if region in ('nh','eurocordex','cordexna','escena'):
     hemis = 'nh'
 elif region in ('sh','samerica'):
     hemis = 'sh'
@@ -151,7 +158,7 @@ if refdata == 'interim':
 elif refdata == 'jra55':
     obs_srcpath = tarpath+'/historical/'+hemis+'/wtseries_jra55_historical_r1i1p1_'+hemis+'_1979_2005.nc'
 elif refdata == 'era5':
-    obs_srcpath = tarpath+'/historical/'+hemis+'/wtseries_era5_historical_r1i1p1_'+hemis+'_1979_2020.nc'
+    obs_srcpath = tarpath+'/historical/'+hemis+'/wtseries_era5_historical_r1i1p1_'+hemis+'_1979_2022.nc'
 else:
     raise Exception('ERROR: unknown entry for <refdata>!')
 
@@ -232,6 +239,9 @@ for mm in list(range(len(model))):
     if (model[mm] == 'ec_earth3_veg') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1')) or (model[mm] == 'mpi_esm_1_2_hr') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1')):
         print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(alt_taryears[0])+' to '+str(alt_taryears[1]))
         mod_srcpath = tarpath+'/'+experiment[mm]+'/'+hemis+'/wtseries_'+model[mm]+'_'+experiment[mm]+'_'+mrun[mm]+'_'+hemis+'_'+alt_taryears[0]+'_'+alt_taryears[1]+'.nc'
+    elif model[mm] in ('cesm2','cnrm_cm6_1','ec_earth3','ipsl_cm6a_lr','miroc6','miroc_es2l','mpi_esm_1_2_lr','mri_esm2_0','nesm3','noresm2_lm','noresm2_mm'):
+        print('INFO: The LWT catalogue for '+model[mm]+', '+experiment[mm]+', '+mrun[mm]+' is available from '+str(alt_taryears_2[0])+' to '+str(alt_taryears_2[1]))
+        mod_srcpath = tarpath+'/'+experiment[mm]+'/'+hemis+'/wtseries_'+model[mm]+'_'+experiment[mm]+'_'+mrun[mm]+'_'+hemis+'_'+alt_taryears_2[0]+'_'+alt_taryears_2[1]+'.nc'
     else:
         mod_srcpath = tarpath+'/'+experiment[mm]+'/'+hemis+'/wtseries_'+model[mm]+'_'+experiment[mm]+'_'+mrun[mm]+'_'+hemis+'_'+taryears[0]+'_'+taryears[1]+'.nc'
     #open model dataset

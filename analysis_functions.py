@@ -267,7 +267,6 @@ def get_target_coords(region_loc):
         raise Exception('ERROR: check entry for <region>!')
     return(latlims,lonlims)
 
-
 def get_error_attrs(errortype):
     ''' get auxiliary variables need for plotting for a specific error type '''
     if errortype == 'MAE':
@@ -856,7 +855,7 @@ def get_seasonal_mean(xr_ds_f,months_f):
     for the season defined in the <months_f> list, the latter containing intergers, e.g. [12,1,2] for the DJF season'''
     xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month.isin(months_f)) #get target months
     xr_ds_f = xr_ds_f.rolling(time=len(months_f)).sum() #rolling sum
-    xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month == months_f[-1]) #get the accumulated values ending in February
+    xr_ds_f = xr_ds_f.isel(time=xr_ds_f.time.dt.month == months_f[-1]) #get the accumulated values ending in the last month indicated in <months_f>
     return(xr_ds_f)
     xr_ds_f.close()
     del(xr_ds_f,months_f)

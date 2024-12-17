@@ -40,11 +40,11 @@ taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the star
 
 #city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 #city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-city = ['Barcelona','Bergen'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
+city = ['Wellington','SantiagoDC'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
-seasons = ['DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-tarwts = [1] #[5,13,22] direcciones sur, [9,17,26] direcciones norte, 15 = purely directional west
+seasons = ['ONDJFM','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON, ONDJFM or AMJJAS
+tarwts = [7,15,24] #[7,15,24] westerlies, [5,13,22] southerlies, [9,17,26] northerly, 15 = pure directional west
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #base path to the output figures
@@ -70,6 +70,10 @@ aggreg = 'year' #unlike map_lowfreq_var.py, this script currently only works for
 anom = 'no' #not relevant here since yearly counts are considered, i.e. the annual cycle is not present in the time series, is kept for future versions of the script
 
 ##execute ###############################################################################################
+#check correct usage of the script
+if len(city) < 2:
+    raise Exception('ERROR: a minimum of two cities must be defined in the <city> input parameter !')
+
 #taryears = np.stack((taryears_obs,taryears_dcppa,taryears_hist))
 #taryears = xr.DataArray(taryears,coords=[experiment,lead_time,np.arange(len(taryears_obs[0]))],dims=['experiment','lead_time','years'], name='temporal_coverage')
 
@@ -174,8 +178,17 @@ for sea in np.arange(len(seasons)):
                     wt = xr.open_dataset(wt_file)
                     
                     #filter out the data for the requested season
-                    if seasons[sea] in ('DJF','MAM','JJA','SON'):
+                    if seasons[sea] in ('MAM','JJA','SON'):
                         wt = wt.sel(time=(wt['time'].dt.season == seasons[sea]))
+                        print('Processing '+seasons[sea]+' season...')
+                    elif seasons[sea] in ('DJF'):
+                        wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,12]))
+                        print('Processing '+seasons[sea]+' season...')    
+                    elif seasons[sea] in ('ONDJFM'):
+                        wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,3,10,11,12]))
+                        print('Processing '+seasons[sea]+' season...')                    
+                    elif seasons[sea] in ('AMJJAS'):
+                        wt = wt.isel(time = np.isin(wt['time'].dt.month,[4,5,6,7,8,9]))
                         print('Processing '+seasons[sea]+' season...')
                     elif seasons[sea] == 'year':
                         print('For season[sea] = '+seasons[sea]+', the entire calendar year will be considered.')
@@ -212,22 +225,47 @@ for sea in np.arange(len(seasons)):
                     arr_tarwts = xr.DataArray(data=bin_array,coords=[pd.DatetimeIndex(wt_center.time)],dims='time',name='wtseries')
                     
                     #get time series with yearly target WT counts
-                    if aggreg == 'year':
+                    if aggreg == 'year':                
+                        #process accumulation period
+                        if seasons[sea] in ('MAM','JJA','SON'):
+                            hours_per_year = arr_tarwts.groupby('time.year').count() #returns the exact number of time instances per year taking into account leap-years
+                            wt_agg_step = arr_tarwts.groupby('time.year').sum('time')
+                        elif seasons[sea] in ('DJF'):
+                            hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
+                            arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
+                            end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
+                            wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 2) & (arr_tarwts.time.dt.day == 28) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
+                            wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
+                        elif seasons[sea] in ('ONDJFM'):
+                            hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
+                            arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
+                            end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
+                            wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 3) & (arr_tarwts.time.dt.day == 31) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
+                            wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
+                        elif seasons[sea] in ('AMJJAS'):
+                            hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
+                            arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
+                            end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
+                            wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 9) & (arr_tarwts.time.dt.day == 30) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
+                            wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
+                        else:
+                            raise Excpetion('Error: check entry for <season[sea]> !')
+                        
+                        #process output units
                         if yearly_units == 'count':
                             ylabel_ts = 'Yearly occurrence frequency (count)'
-                            wt_agg_step = arr_tarwts.groupby('time.year').sum('time')
                         elif yearly_units == '%':
                             ylabel_ts = 'Yearly relative occurrence frequency (%)'
-                            hours_per_year = arr_tarwts.groupby('time.year').count()
-                            wt_agg_step = arr_tarwts.groupby('time.year').sum('time') #calculate annual mean values
+                            #wt_agg_step = arr_tarwts.groupby('time.year').sum('time') #calculate annual mean values
+                            #wt_agg_step = wt_agg_step / hours_per_year *100
                             wt_agg_step = wt_agg_step / hours_per_year *100
                         elif yearly_units == 'z-score':
                             ylabel_ts = 'z-score'
-                            hours_per_year = arr_tarwts.groupby('time.year').count()
-                            wt_agg_step = arr_tarwts.groupby('time.year').sum('time') #calculate annual mean values
+                            #wt_agg_step = arr_tarwts.groupby('time.year').sum('time') #calculate annual mean values
                             wt_agg_step = z_transform(wt_agg_step / hours_per_year *100)
                         else:
                             raise Exception('ERROR: unknown entry for <yearly_units>!')       
+                    
                     ntime = wt_agg_step.values.shape[0]
                     wt_agg[mm,:] = wt_agg_step.values #fill into the numpy array <wt_agg> for further processing
                     
@@ -253,7 +291,8 @@ for sea in np.arange(len(seasons)):
                 
                 #caclulate running mean anomalies and signal-to-noise ratios thereon
                 runanom_i = anom_i.rolling(time=meanperiod,center=True,min_periods=None).mean()
-                runsignal = runanom_i.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
+                #runsignal = runanom_i.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
+                runsignal = wt_agg.mean(dim='member').rename('signal') #ensemble signal for each temporal mean period
                 runnoise = runanom_i.std(dim='member').rename('noise') #ensemble standard deviation for each temporal mean period
                 runstn = np.abs(runsignal / runnoise).rename('signal-to-noise') #signal-to-noise ration for each temporal mean period
                 critval_stn = runstn.copy() #get a new xarray data array from an existing one
@@ -563,25 +602,6 @@ for sea in np.arange(len(seasons)):
         plt.close('all')
         del(fig)
 
-# #plot figures involving all seasons
-# for cc in np.arange(len(city)):
-    # fig = plt.figure()
-    # for sea in np.arange(len(seasons)):
-        # hist_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).min().values
-        # hist_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).max().values
-        # plt.plot([hist_min,hist_max],[sea, sea],color='blue')
-        # fy1_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).mean().values
-        # fy5_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).mean().values
-        # fy10_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).mean().values
-        # obs_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment=rho_ref,city=city[cc],lead_time=1).mean().values
-        # plt.plot(fy1_mean,sea+0.1,color='blue',linestyle='None',marker='D')
-        # plt.plot(fy5_mean,sea+0.2,color='red',linestyle='None',marker='D')
-        # plt.plot(fy10_mean,sea+0.3,color='black',linestyle='None',marker='D')
-        # plt.plot(obs_mean,sea+0.4,color='orange',linestyle='None',marker='D')
-    # savename_barplots = comparison_dir+'/barplot_histspread_dcppAmean_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(ref_period[0])+'_'+str(ref_period[-1])+'.'+outformat
-    # plt.savefig(savename_barplots,dpi=dpival)
-    # plt.close('all')
-
 #plot figures involving all seasons
 for sea in np.arange(len(seasons)):
     fig = plt.figure()
@@ -623,4 +643,36 @@ for sea in np.arange(len(seasons)):
     plt.savefig(savename_barplots,dpi=dpival)
     plt.close('all')
     
-print('INFO: signal2noise_local.py has run successfully!')
+    #plot the raw and standardized dcppA (forecast year 1) and historical signal, as well as the observed time-series for each city
+    for sea in np.arange(len(seasons)):
+        for cc in np.arange(len(city)):
+            #calculate Pearson correlation coefficient between ERA5 and dcppA ensemble-mean time series for the raw data
+            rho_dcppa_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1),signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1))
+            rho_cera20c_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1),signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1))
+            #plot raw values
+            fig = plt.figure()
+            signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1).plot(color='black',label='ERA5')
+            signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1).plot(color='grey',linestyle='dotted',label='CERA-20C')
+            signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1).plot(color='red',label='dcppA')
+            #signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=1).plot(color='blue')
+            
+            plt.title(wtlabel+' in '+seasons[sea]+': '+str(np.round(rho_dcppa_era5.values,2))+' / '+str(np.round(rho_cera20c_era5.values,2)))
+            plt.legend()
+            savename_ts_signal_raw = comparison_dir+'/timeseries_raw_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+'_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
+            plt.savefig(savename_ts_signal_raw,dpi=dpival)
+            plt.close('all')
+
+            #plot standardized anomalies
+            fig = plt.figure()
+            z_transform(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='black',label='ERA5')
+            z_transform(signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='grey',linestyle='dotted',label='CERA-20C')
+            z_transform(signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='red',label='dcppA')
+            #z_transform(signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='blue')
+            
+            plt.title(wtlabel+' in '+seasons[sea]+': '+str(np.round(rho_dcppa_era5.values,2))+' / '+str(np.round(rho_cera20c_era5.values,2)))
+            plt.legend()
+            savename_ts_signal_std = comparison_dir+'/timeseries_std_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+'_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
+            plt.savefig(savename_ts_signal_std,dpi=dpival)
+            plt.close('all')
+
+print('INFO: signal2noise_local_extended_season.py has run successfully!')

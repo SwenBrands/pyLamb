@@ -120,10 +120,20 @@ miroc_es2l_mrun = ['r1i1p1f2','r5i1p1f2']
 miroc_es2l_ens = ['miroc_es2l'] * len(miroc_es2l_mrun)
 miroc_es2l_family = ['esm'] * len(miroc_es2l_mrun)
 miroc_es2l_cmip = ['6']*len(miroc_es2l_mrun)
-miroc_es2l_rgb = ['#008080']*len(miroc_es2l_mrun)
+miroc_es2l_rgb = ['#0000FF']*len(miroc_es2l_mrun) #blue
 miroc_es2l_marker = ['<']*len(miroc_es2l_mrun)
 miroc_es2l_exp = ['historical'] * len(miroc_es2l_mrun)
 miroc_es2l_name = ['MIROC-ES2L'] * len(miroc_es2l_mrun)
+
+#get metadata for miroc6 ensemble of historical exeriments
+miroc6_mrun = ['r1i1p1f1','r3i1p1f1']
+miroc6_ens = ['miroc6'] * len(miroc6_mrun)
+miroc6_family = ['gcm'] * len(miroc6_mrun)
+miroc6_cmip = ['6']*len(miroc6_mrun)
+miroc6_rgb = ['#00FFFF']*len(miroc6_mrun) #agua
+miroc6_marker = ['v']*len(miroc6_mrun)
+miroc6_exp = ['historical'] * len(miroc6_mrun)
+miroc6_name = ['MIROC6'] * len(miroc6_mrun)
 
 #get metadata for nesm3 ensemble of historical exeriments
 nesm3_mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1']
@@ -144,3 +154,13 @@ cnrm_cm6_1_rgb = ['red']*len(cnrm_cm6_1_mrun)
 cnrm_cm6_1_marker = ['v']*len(cnrm_cm6_1_mrun)
 cnrm_cm6_1_exp = ['historical'] * len(cnrm_cm6_1_mrun)
 cnrm_cm6_1_name = ['CNRM-CM6-1'] * len(cnrm_cm6_1_mrun)
+
+#get metadata for cesm2 large ensemble of historical exeriments
+cesm2_mrun = ['1001.001','1021.002','1041.003','1061.004','1081.005','1101.006','1121.007','1141.008','1161.009','1181.010','1231.001','1231.002','1231.003','1231.004','1231.005','1231.006','1231.007','1231.008','1231.009','1231.010','1251.001','1251.002','1251.003','1251.004','1251.005','1251.006','1251.007','1251.008','1251.009','1251.010','1281.001','1281.002','1281.003','1281.004','1281.005','1281.006','1281.007','1281.008','1281.009','1281.010','1301.001','1301.002','1301.003','1301.004','1301.005','1301.006','1301.007','1301.008','1301.009','1301.010']
+cesm2_ens = ['cesm2'] * len(cesm2_mrun)
+cesm2_family = ['esm'] * len(cesm2_mrun)
+cesm2_cmip = ['6']*len(cesm2_mrun)
+cesm2_rgb = ['#80BFFF']*len(cesm2_mrun) #sky blue
+cesm2_marker = ['o']*len(cesm2_mrun)
+cesm2_exp = ['historical'] * len(cesm2_mrun)
+cesm2_name = ['CESM2'] * len(cesm2_mrun)

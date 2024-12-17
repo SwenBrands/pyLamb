@@ -35,7 +35,7 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 #Note: The time period is filtered in the previous interpolation step accomplished by <interpolator_xesmf.py>
 
 n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-experiment = 'dcppA' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
+experiment = 'historical' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
 home = os.getenv('HOME')
 filesystem = 'lustre'
 hemis = 'sh' #sh or nh
@@ -55,17 +55,21 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 # #tarwts_name = ['PA', 'DANE_PDNE_DCNE', 'DAE_PDE_DCE', 'DASE_PDSE_DCSE', 'DAS_PDS_DCS', 'DASW_PDSW_DCSW', 'DAW_PDW_DCW', 'DANW_PDNW_DCNW', 'DAN_PDN_DCN','PC','U'] #original names for 11 types
 # tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
 
+# # NH and SH catalogues calculated from CESM2-LE historical runs
+# mrun = ['1001.001','1021.002','1041.003','1061.004','1081.005','1101.006','1121.007','1141.008','1161.009','1181.010','1231.001','1231.002','1231.003','1231.004','1231.005','1231.006','1231.007','1231.008','1231.009','1231.010','1251.001','1251.002','1251.003','1251.004','1251.005','1251.006','1251.007','1251.008','1251.009','1251.010','1281.001','1281.002','1281.003','1281.004','1281.005','1281.006','1281.007','1281.008','1281.009','1281.010','1301.001','1301.002','1301.003','1301.004','1301.005','1301.006','1301.007','1301.008','1301.009','1301.010']
+# model = ['cesm2']*len(mrun)
+
 # # ERA5
 # model = ['era5']
 # mrun =  ['r1i1p1']
 
-# # historical runs extended with ssp245 to compare with dcppA runs below
-# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
-
-# dcppA runs
+# historical runs extended with ssp245 to compare with dcppA runs below
 model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+
+# # dcppA runs
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
 
 # # ## accomplished rcp85 and ssp585 LWT catalogues for both the NH and SH
 # model = ['miroc_esm']

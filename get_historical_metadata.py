@@ -5,7 +5,7 @@ def get_historical_metadata(model):
     """Python function assigning metadata to the coupled model configurations contributing historical experiments to CMIP5 and 6
     Dependencies: numpy
     input = name of the coupled model configuration (list of character strings), possible entries are (case-sensitive!):
-    ['access10','access13','access_cm2','access_esm1_5','awi_esm_1_1_lr','bcc_csm1_1','bcc_csm2_mr','ccsm4','cmcc_cm','cmcc_cm2_hr4','cmcc_cm2_sr5','cmcc_esm2','canesm2','canesm5',
+    ['access10','access13','access_cm2','access_esm1_5','awi_esm_1_1_lr','bcc_csm1_1','bcc_csm2_mr','ccsm4','cesm2','cmcc_cm','cmcc_cm2_hr4','cmcc_cm2_sr5','cmcc_esm2','canesm2','canesm5',
     'cnrm_cm5','cnrm_cm6_1','cnrm_cm6_1_hr','cnrm_esm2_1','csiro_mk3_6_0','ec_earth','ec_earth3','ec_earth3_veg','ec_earth3_veg_lr','ec_earth3_aerchem',
     'ec_earth3_cc','fgoals_g2','fgoals_g3','gfdl_cm3','gfdl_cm4','gfdl_esm2g','gfdl_esm4','giss_e2_h','giss_e2_r','giss_e2_1_g','hadgem2_es','hadgem2_cc',
     'hadgem3_gc31_mm','iitm_esm','inm_cm4','inm_cm5','ipsl_cm5a_lr','ipsl_cm5a_mr','ipsl_cm6a_lr','kiost_esm','miroc5','miroc6','miroc_esm','miroc_es2l','mpi_esm_lr',
@@ -307,7 +307,7 @@ def get_historical_metadata(model):
         contact_f= 'Peter Gent'
         addinfo_f = ''
         cmip_f = 5
-        rgb_f = 'white'
+        rgb_f = '#80BFFF'
         marker_f = 'P'
         latres_atm_f = 192
         lonres_atm_f = 288
@@ -317,6 +317,35 @@ def get_historical_metadata(model):
         lev_oc_f = 60
         ecs_f = 2.9
         tcr_f = 1.7
+    elif model == 'cesm2': #CESM2-Large Ensemble, see https://www.cesm.ucar.edu/models/cesm2/naming-conventions, metadata has been partly derived from netCDF files downloaded from ESGF
+        fullname_f = 'CESM2 (2017)'
+        mrun_f = '1001.001'
+        doi_f = '10.1029/2018MS001369'
+        atmos_f = ' CAM6 (0.9x1.25 finite volume grid; 288 x 192 longitude/latitude; 32 levels; top level 2.25 mb)'
+        surface_f = 'CLM5 0.9x1.25 finite volume grid; 288 x 192 longitude/latitude; 32 levels; top level 2.25 mb)'
+        ocean_f = 'POP2 (320x384 longitude/latitude; 60 levels; top grid cell 0-10 m)'
+        seaice_f = 'CICE5.1 (same grid as ocean)'
+        aerosols_f = 'MAM4 (0.9x1.25 finite volume grid; 288 x 192 longitude/latitude; 32 levels; top level 2.25 mb)'
+        chemistry_f = 'MAM4 (0.9x1.25 finite volume grid; 288 x 192 longitude/latitude; 32 levels; top level 2.25 mb)'
+        obgc_f = 'MARBL (320x384 longitude/latitude; 60 levels; top grid cell 0-10 m)'
+        landice_f = 'CISM2.1'
+        coupler_f = 'CPL v7'
+        complex_f = '2222222221' # has to be confirmed
+        contact_f= 'cesm_cmip6@ucar.edu' #We need a contact name here
+        addinfo_f = 'model_doi_url: https://doi.org/10.5065/D67H1H0V'
+        family_f = 'esm'
+        cmip_f = 6
+        calendar_f = 'noleap'
+        rgb_f = '#80BFFF'
+        marker_f = 'o'
+        latres_atm_f = 192
+        lonres_atm_f = 288
+        lev_atm_f = 32
+        latres_oc_f = 384
+        lonres_oc_f = 320
+        lev_oc_f = 60
+        ecs_f = 5.3 # https://doi.org/10.1029/2019GL083978
+        tcr_f = 2.1 # https://doi.org/10.1029/2020EA001296
     elif model == 'cmcc_cm': 
         fullname_f = 'CMCC-CM, Euro-Mediterranean Centre on Climate Change coupled climate model'
         mrun_f = 'r1i1p1'
