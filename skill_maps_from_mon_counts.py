@@ -46,11 +46,11 @@ reference_period = [1970,2014] # "from_data" or list containing the start and en
 # seasons = ['ONDJFM','AMJJAS','DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
 # months = [[10,11,12,1,2,3],[4,5,6,7,8,9],[12,1,2],[1,2,3]] #list of months corresponding to each season
 
-seasons = ['ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-months = [[10,11,12,1,2,3],[4,5,6,7,8,9]] #list of months corresponding to each season
+# seasons = ['JFM','JFMA','OND'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[1,2,3],[1,2,3,4],[10,11,12]] #list of months corresponding to each season
 
-# seasons = ['ONDJFM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-# months = [[10,11,12,1,2,3]] #list of months corresponding to each season
+seasons = ['JFM','AMJ','JAS','OND'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+months = [[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #list of months corresponding to each season
 
 tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
 tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
@@ -80,6 +80,7 @@ repetitions = 100 #number of repetitions used for Monte-Carlo significance testi
 anom = 'yes' #yes or no; calculate correlation measures and RPC on anomalies or raw values, respectively
 exclude_members = 3 #number of members to be excluded for Monte-Carlo significance testing
 rho_critval = 0.279 #critical values for a significant Pearson correlation coefficient for n = 50, alpha=0.05, two-tailed test
+rho_lim = 0.8 #limit of the skill boxplots to be plotted, skill is measured with the Pearson correlation coefficient between the ensemble-mean and the reanalysis. 
 
 #options used for periodgram, experimental so far, see https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
@@ -162,7 +163,7 @@ for lwt in np.arange(len(tarwts)):
                 if seasons[sea] in ('MAM','JJA','SON'):
                     wt = wt.sel(time=(wt['time'].dt.season == seasons[sea]))
                     print('Processing '+seasons[sea]+' season...')
-                elif seasons[sea] in ('DJF','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+                elif seasons[sea] in ('DJF','JFM','AMJ','JAS','OND','JFMA','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
                     print('Processing '+seasons[sea]+' season...')
                     # wt = wt.isel(time=wt.time.dt.month.isin(months[sea])) #get target months
                     # wt = wt.rolling(time=len(months[sea])).sum() #rolling sum
@@ -237,7 +238,7 @@ for lwt in np.arange(len(tarwts)):
         if seasons[sea] in ('MAM','JJA','SON'):
             wt_obs = wt_obs.sel(time=(wt_obs['time'].dt.season == seasons[sea]))
             print('Processing '+seasons[sea]+' season...')
-        elif seasons[sea] in ('DJF','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+        elif seasons[sea] in ('DJF','JFM','AMJ','JAS','OND','JFMA','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
             print('Processing '+seasons[sea]+' season...')
             # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month.isin([12,1,2])) #get DJF months
             # wt_obs = wt_obs.rolling(time=3).sum() #rolling sum
@@ -571,17 +572,17 @@ for sea in np.arange(len(seasons)):
         rho_sh_step = rho_sh.sel(season=seasons[sea],experiment=experiment_out[en]).stack(gridpoints=['lon','lat'])
         #then plot
         savename_nh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rho_nh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        draw_boxplot(rho_nh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_nh,dpival,rho_lim*-1,rho_lim,critval_f=rho_critval)
         savename_sh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rho_sh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_sh,dpival,-1,1,critval_f=rho_critval)
+        draw_boxplot(rho_sh_step,boxplot_xticks,tarwts_name,cbarlabel_spear,savename_sh,dpival,rho_lim*-1,rho_lim,critval_f=rho_critval)
         #get difference between the temporal correlation coefficients of the candidate experiment and the historical experiment used as reference and stack lon and lat to new <gridpoint> dimension
         rho_nh_step_diff = rho_nh_step - rho_nh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
         rho_sh_step_diff = rho_sh_step - rho_sh.sel(season=seasons[sea],experiment='historical').stack(gridpoints=['lon','lat'])
         #then plot
         savename_nh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rho_nh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_nh,dpival,-1,1,critval_f=rho_critval)
+        draw_boxplot(rho_nh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_nh,dpival,rho_lim*-1,rho_lim,critval_f=rho_critval)
         savename_sh = savedir_correlation+'/boxplot_'+correlation_type.lower()+'_diff_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_minus_historical_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rho_sh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_sh,dpival,-1,1,critval_f=rho_critval)
+        draw_boxplot(rho_sh_step_diff,boxplot_xticks,tarwts_name, cbarlabel_spear_diff,savename_sh,dpival,rho_lim*-1,rho_lim,critval_f=rho_critval)
 
         #and clean
         rho_nh_step.close()

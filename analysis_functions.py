@@ -20,6 +20,9 @@ def get_location(location_f):
     elif location_f == 'Casablanca':
         tarlat_f = 33.589886
         tarlon_f = -7.603869
+    elif location_f == 'Escorial': 
+        tarlat_f = 	40.581608
+        tarlon_f = -4.125124
     elif location_f == 'Madrid':
         tarlat_f = 40.4169644
         tarlon_f = -3.7035621
@@ -53,6 +56,9 @@ def get_location(location_f):
     elif location_f == 'Wellington':
         tarlat_f = -41.2889
         tarlon_f = 174.7772
+    elif location_f == 'Zaragoza':
+        tarlat_f = 	41.649693
+        tarlon_f = -0.887712
     else:
         raise Exception('ERROR: check entry for <location_f>!')
     return(tarlat_f,tarlon_f)
@@ -64,12 +70,14 @@ def get_ensemble_config(ensemble_f,experiment_f):
         model_f = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
         mrun_f = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
         model_label_f = 'CERA-20C'
-        tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
+        tarhours_f = [0,3,6,9,12,15,18,21]
+        # tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
     elif ensemble_f == 'era5' and experiment_f == '20c':
         model_f = ['era5','era5','era5','era5','era5','era5','era5','era5','era5','era5']
         mrun_f = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
         model_label_f = 'ERA5'
-        tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
+        tarhours_f = [0,3,6,9,12,15,18,21]
+        # tarhours_f = [0,6,12,18] #note that the saved LWT data is 3h
     elif ensemble_f == 'mpi_esm_1_2_hr' and experiment_f == 'historical':
         model_f = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr']
         mrun_f = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
@@ -812,7 +820,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
     else:
         toplayer_x = xx_f.flatten()[agree_ind.flatten()]
         toplayer_y = yy_f.flatten()[agree_ind.flatten()]
-        ax.plot(toplayer_x, toplayer_y, color='white', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
         #ax.plot(toplayer_x, toplayer_y, color='grey', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=map_proj_f, zorder=4)
     if origpoint is None:
         print('No <origpoint> was found by get_map_lowfreq_var() function !')

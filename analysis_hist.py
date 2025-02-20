@@ -42,10 +42,10 @@ exec(open('analysis_functions.py').read())
 home = os.getenv('HOME')
 filesystem = 'lustre' #set the filesystem in use, currently, extdisk or lustre
 experiment = 'historical'
-refdata = 'jra55' #interim, jra55 or era5 reference reanlaysis dataset
+refdata = 'era5' #interim, jra55 or era5 reference reanlaysis dataset
 errortype = 'MAE' #error type to be computed, MAE, KL, TPMS, PERS or PERSall: Mean Absolute Error, Kullback-Leibler divergence, Transition Probability Matrix score (full matrix) or only diagonal thereof (PERS) or error in sum of the diagonal (PERSall) indicating probabilities of persistence.
-timelag = 4 #lag for calculating transition probabilities, six-hourly time step i.e. 1 refers to a lag of six hours, 2 to 12 hours etc. (this is the time index)
-region = 'sh' #nh, sh, eurocordex, cordexna, escena, north_atlantic
+timelag = 1 #lag for calculating transition probabilities, six-hourly time step i.e. 1 refers to a lag of six hours, 2 to 12 hours etc. (this is the time index), 4 for work with UZAR
+region = 'eurocordex' #nh, sh, eurocordex, cordexna, escena, north_atlantic
 tarpath = '/media/swen/ext_disk2/datos/lamb_cmip5/results_v2/6h' #path of the source files
 figpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs'
 auxpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/pyLamb/aux'
@@ -60,7 +60,7 @@ taryears = ['1979', '2005'] #start and end years as indicated in source nc file 
 taryears_cmip6 = ['1979', '2014']
 taryears_cmip6_long = ['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
 #set LWT classification options
-classes_needed = 20 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH, 18 following Fernández-Granja et al. 2023, Climate Dynamics, https://doi.org/10.1007%2Fs00382-022-06658-7
+classes_needed = 27 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH, 18 following Fernández-Granja et al. 2023, Climate Dynamics, https://doi.org/10.1007%2Fs00382-022-06658-7
 minfreq = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 #set format and resolution of the output figures
 figformat = 'pdf' #format of output figures, pdf or png
@@ -88,7 +88,7 @@ sigma_lim = 1.55 #1.55, limit of standard deviation ratio used in Taylor plot
 corrmethod = 'pearson' #correlation applied for correlation matrix of the error patterns, either pearson, spearman or kendall
 groupby = 'agcm' #agcm, ogcm or performance; group by atmosphere or ocean sub-model or by spatial-median performance, from best to worse
 complex_thresh = 14
-correct_ru = 'yes' #correct for the effects of reanalysis uncertainty; if set to "yes", those grid-boxes where interim does not rank 0 (or worse, set by <rank_ru>) within the multi-model ensemble are excluded from the analysis
+correct_ru = 'no' #correct for the effects of reanalysis uncertainty; if set to "yes", those grid-boxes where interim does not rank 0 (or worse, set by <rank_ru>) within the multi-model ensemble are excluded from the analysis
 rank_ru = 0 # if set to 3, South America becomes a "certain" region; performance rank the alternative reanalysis takes in the multi-model ensemble is used as if it was a GCM. If exceeded, the corresponding grid-box is set to nan and is thus excluded from the analyses.
 plot_freq = 'yes' #plot an example barplot (GCMs vs. reanalysis) for illustrative purposes
 alt_runs = 'no' #loads get_historical_metadata_altruns.py to load alternative runs for a subset of 15 GCMs.
@@ -354,7 +354,7 @@ for mm in range(len(model)):
             print('INFO: LWT catalouge for ERA5 ends in 2022.')
             mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_2022.nc'
         else:
-            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'_'+season_label.lower()+'.nc'
+            mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears[0] +'_'+ taryears[1]+'.nc'
     elif cmip[mm] == 6: #for CMIP6 models starting in 1850 and ending in 2014
         if (model[mm] == 'ec_earth3_veg') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r6i1p1f1','r11i1p1f1')) or (model[mm] == 'mpi_esm_1_2_hr') & (mrun[mm] in ('r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1')):
             mod_srcpath = tarpath +'/'+ experiment[mm] + '/'+hemis+'/wtseries_' + model[mm] + '_' + experiment[mm] +'_'+ mrun[mm] +'_' +hemis+'_'+taryears_cmip6_long[0] +'_'+ taryears_cmip6_long[1]+'.nc'

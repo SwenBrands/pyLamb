@@ -42,12 +42,14 @@ exec(open('get_historical_metadata.py').read()) #a function assigning metadata t
 
 #set input parameters
 n_par_jobs = 24 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-ensemble = 'cera20c'
+verbose_level = 10 #integer from 1 to 10 indicating increasing complexitiy of the Parallel function's level of verbosity
+ensemble = 'era5' #cera20c or era5
 experiment = '20c' #piControl, historical, amip, 20c
 region_various = ['sh'] #['nh','sh']
-tarwts_various = [[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+# tarwts_various = [[1],[18],[2,10,19],[3,11,20],[4,12,21],[5,13,22],[6,14,23],[7,15,24],[8,16,25],[9,17,26],[27]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
+tarwts_various = [[1],[18],[7,15,24]] # [[18],[7,15,24]], list of lists, loop through various wt combinations for exploratory data analysis; e.g. [5,13,22] are southerly directions, [9,17,26] are northerly ones
 tarmonths_various = [[1,2,3,4,5,6,7,8,9,10,11,12]] #[[1,2,3,4,5,6,7,8,9,10,11,12],[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #loop through various seasons for exploratory data analysis
-taryears = [1979,2010] #start and end years to be analysed; [1860,2261] for mpi_esm_1_2_lr and piControl, [1979,2005] for historical experiments from CMIP5 and 6, historical and amip in CMIP6 extends to 2014 (at least), piControl period varies largely from one GCM to another
+taryears = [1940,2022] #start and end years to be analysed; [1860,2261] for mpi_esm_1_2_lr and piControl, [1979,2005] for historical experiments from CMIP5 and 6, historical and amip in CMIP6 extends to 2014 (at least), piControl period varies largely from one GCM to another
 aggreg = 'year' #temporal aggregation of the 3 or 6-hourly time series: 'year' or '1', '7', '10' or '30' indicating days, must be string format
 fig_root = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #path to the output figures
 store_wt_orig = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/results_v2/'
@@ -69,9 +71,9 @@ nperseg_quotient = 3 #only used by Welch; used to calculate <nperseg>, i.e. the 
 scaling = 'spectrum'
 detrend = 'linear' #linear or constant for removing the linear trend or mean only prior to calculating the power spectrum
 window = 'hann' #hamming or hann, etc.
-repetitions = 1000 #number of repetitions used for randomly reshuffling the time series in order to obtain confidence intervals for random power spectra
+repetitions = 1000 #1000 gives sufficiently fine results; number of repetitions used for randomly reshuffling the time series in order to obtain confidence intervals for random power spectra
 ci_percentile = 90.
-periodogram_type = 'Welch' #periodogram or Welch, as implemented in scipy.signal
+periodogram_type = 'periodogram' #periodogram or Welch, as implemented in scipy.signal
 yearly_units = '%' # count or % (relative frequency); unit of the yearly LWT counts
 
 #visualization options
@@ -225,7 +227,7 @@ for region in region_various:
                 #run a parallel loop along all longitudinal grid-boxes of a given latitude
                 for jj in np.arange(arr_vals.shape[2]):
                     time_series = arr_vals[:,:,jj]
-                    par_result = Parallel(n_jobs=n_par_jobs)(delayed(get_lowfreq_var)(time_series[:,ii],mktest,testlevel,periodogram_type,nfft,fs,window,scaling,detrend,repetitions,ci_percentile,nperseg=nperseg) for ii in np.arange(arr_vals.shape[1]))
+                    par_result = Parallel(n_jobs=n_par_jobs,verbose=verbose_level)(delayed(get_lowfreq_var)(time_series[:,ii],mktest,testlevel,periodogram_type,nfft,fs,window,scaling,detrend,repetitions,ci_percentile,nperseg=nperseg) for ii in np.arange(arr_vals.shape[1]))
                     for ii in np.arange(len(par_result)):                   
                         ##fill the np arrays with the results of each loop through mm (models), ii (lons) and jj (lats)
                         #for the trends

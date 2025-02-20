@@ -29,7 +29,6 @@ filesystem = 'lustre' #set the filesystem in use, currently, extdisk or lustre
 taryears = ['1979', '2005'] #start and end years of the performance analysis, for catalogues available from 1979 to 2005, i.e. the common period of the historical experiments from CMIP5 and 6
 alt_taryears=['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
 alt_taryears_2=['1979', '2014'] ##alternative start and end years, used for those catalogues available from 1979 to 2014
-fliersize = 0.5
 textsize = 2. #3 for visualization without the 50 CESM2 members
 textsize2 = 5.
 figformat = 'pdf'
@@ -47,7 +46,7 @@ colormap_error = 'jet' #nipy_spectral
 upperlim = 3.0 #upper limit for summary MAE boxplot's Y-axis, 3.5 for NH
 experiment = 'historical'
 refdata = 'era5' #interim, jra55 or era5
-flierprops = dict(marker='+', markerfacecolor='black', markersize=6, linestyle='none')
+flierprops = dict(marker='.', markerfacecolor='black', markersize=0.2, linestyle='none')
 showcaps = False
 showfliers = False #False or True
 showmeans = False
@@ -56,8 +55,10 @@ sigma_lim = 1.55 #1.55, limit of standard deviation ratio used in Taylor plot
 figfolder = 'figs_ensemble'
 correct_ru = 'no'
 rank_ru = 0
+#fliersize = 0.1
 orientation = 'h' #v or h; orientation of the bars in the boxplot
 boxplot_linewidth = 0.5
+boxplot_marker = '.'
 aspect_ratio = 0.05
 shrinkfactor = 0.6
 
@@ -355,7 +356,8 @@ median_error = np.nanmedian(arr_error_2d,axis=0)
 color_dict = dict(zip(mrun, rgb))
 
 ##boxplot with seaborn
-fig = sns.boxplot(data=arr_error_2d,orient=orientation,fliersize=fliersize,palette=rgb,linewidth=boxplot_linewidth)
+# fig = sns.boxplot(data=arr_error_2d,orient=orientation,flierprops={'marker':boxplot_marker},fliersize=fliersize,palette=rgb,linewidth=boxplot_linewidth)
+fig = sns.boxplot(data=arr_error_2d,orient=orientation,flierprops=flierprops,palette=rgb,linewidth=boxplot_linewidth)
 #plt.subplots_adjust(bottom=0.20) #see https://www.python-graph-gallery.com/192-about-matplotlib-margins
 if orientation == 'v':
     #fig.set_xticklabels(model_plus_run,rotation=rotation,size=textsize) #model_plus_exp

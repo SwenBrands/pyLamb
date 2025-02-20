@@ -13,7 +13,7 @@ import os
 exec(open('analysis_functions.py').read())
 
 #set input parameter
-city = 'Weddell Sea'
+city = 'Escorial'
 tarmonths = list((1,2,3,4,5,6,7,8,9,10,11,12)) #target months
 dist_lon = 20
 dist_lat = 10
@@ -24,10 +24,8 @@ gridres = 2.5
 colormap = 'RdYlBu_r'
 outformat = 'pdf'
 
-gcm = 'cera20c'
-run = 'm0'
-experiment = '20c' #historical, 20c, amip, ssp245, ssp585
-hemis = 'sh' #nh or sh
+gcm = 'cera20c' #cera20c, era5
+hemis = 'nh' #nh or sh
 
 #execute ###############################################################################################
 tarlat,tarlon = get_location(city)
@@ -35,9 +33,13 @@ tarlat,tarlon = get_location(city)
 if gcm == 'cera20c':
     timestep = '3h'
     taryears = [1901,2010] #start and end yeartaryears = [1979,2005] #start and end year
+    experiment = '20c' #historical, 20c, amip, ssp245, ssp585
+    run = 'm0'
 elif gcm == 'era5':
     timestep = '6h'
-    taryears = [1979,2020] #start and end yeartaryears = [1979,2005] #start and end year
+    taryears = [1979,2022] #start and end yeartaryears = [1979,2005] #start and end year
+    experiment = 'historical' #dummy experiment
+    run = 'r1i1p1' #dummy run
 else:
     timestep = '6h'
     taryears = [1979,2005] #start and end year
@@ -146,3 +148,5 @@ plt.savefig(savename,dpi=dpival)
 plt.close('all')
 wt_center_dti.close()
 wt.close()
+
+print('get_composites.py has been run successfully. Results have been stored at '+savedir_compo)
