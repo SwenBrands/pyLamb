@@ -34,14 +34,16 @@ import xesmf as xe
 exec(open('get_historical_metadata.py').read()) #a function assigning metadata to the models in <model> (see below)
 exec(open('analysis_functions.py').read()) #a function assigning metadata to the models in <model> (see below)
 
+
 ##MEMORY EFFICIENT VERSION OF interpolator_north.py, loads GCM data file by file using xarray.open_dataset instead of xarray.open_mfdataset
 tarres=2.5
 precision = 'int32' #normally float32, int32 for cnrm_cm6_1 models and cnrm_cm5 test case and generally for highres models, for cnrm_cm6_1_hr it only works if started from the bash prompt (i.e. not within ipython)
-experiment = 'historical' #historical, 20c, amip, piControl, ssp245, ssp585, rcp85, dcppA
-lead_time = 9 #lead time in years, only applied if experiment = 'dcppA'
+experiment = 'dcppA' #historical, 20c, amip, piControl, ssp245, ssp585, rcp85, dcppA
+lead_time = 1 #lead time in years, only applied if experiment = 'dcppA', CAUTION: starts with 0 for lead_time_= 'LT' (Lead-Time) and with 1 for lead_time_concept = 'FY' (Forecast Year) 
+lead_time_concept = 'LT' #lead time concept: FY or LT; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f.
 regridding_method = 'patch' #bilinear
 filesystem = 'lustre' #<lustre> or <extdisk>, used to select the correct path to the source netCDF files
-hemis = 'sh'
+hemis = 'nh'
 printfilesize = 'no' #print memory size of the data array subject to interpolation from the individual input netCDF files in the source directory. Depending on the GCM's resolution and the number of years stored in the file, this is most memory greedy object of the script and may lead to a kill of the process.
 home = os.getenv('HOME')
 
@@ -69,17 +71,17 @@ home = os.getenv('HOME')
 # mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 # mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
-# historical runs extended with ssp245
-model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
-mrun = ['r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
-mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+# # historical runs extended with ssp245
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #implement below for use with other experiments than dccpA below; used to check the filename or link in the target directory
+# mrun = ['r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
-# # dcppA runs
-# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-# model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #used to check the filename or link in the target directory
-# mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
-# mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
+# dcppA runs
+model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+model_label = ['EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3','EC-Earth3'] #used to check the filename or link in the target directory
+mrun = ['r1i1p1f1','r2i1p1f1','r3i1p1f1','r4i1p1f1','r5i1p1f1','r6i1p1f1','r7i1p1f1','r8i1p1f1','r9i1p1f1','r10i1p1f1']
+mycalendar = ['gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian','gregorian']
 
 # ## historical runs successfully interpolated for the NH and SH
 # model = ['mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','ec_earth3_veg','noresm2_mm','awi_esm_1_1_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','hadgem2_cc','hadgem2_es','hadgem3_gc31_mm','noresm2_lm','noresm2_lm','nesm3','nesm3','mri_esm2_0','noresm2_mm','miroc_es2l','miroc_es2l','ec_earth3_veg','ec_earth3_veg_lr','miroc6','ec_earth3_aerchem','ec_earth3_cc','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','mpi_esm_1_2_lr','noresm2_lm','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','hadgem2_es','mpi_esm_1_2_lr','access_esm1_5','noresm2_mm','ipsl_cm5a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','ipsl_cm6a_lr','mpi_esm_1_2_hr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','ipsl_cm5a_lr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mri_esm2_0','mri_esm2_0','mri_esm2_0','fgoals_g2','fgoals_g3','kiost_esm','iitm_esm','taiesm1','csiro_mk3_6_0','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','mpi_esm_1_2_hr','gfdl_cm3','giss_e2_r','era5','kace_1_0_g','cmcc_cm2_hr4','inm_cm5','canesm5','gfdl_esm2g','miroc6','ec_earth3_veg','gfdl_esm4','bcc_csm1_1','cnrm_cm6_1','cnrm_cm6_1','cmcc_esm2','ipsl_cm5a_lr','interim','jra55','cnrm_cm6_1_hr','cnrm_cm6_1','ec_earth3_aerchem','ec_earth3_cc','cnrm_esm2_1','mpi_esm_1_2_hr','giss_e2_1_g', 'sam0_unicon', 'bcc_csm2_mr', 'gfdl_cm4','ec_earth3','access13', 'mpi_esm_mr', 'cmcc_cm','access10', 'ccsm4', 'ec_earth', 'canesm2', 'mpi_esm_lr', 'cnrm_cm5', 'giss_e2_h', 'inm_cm4', 'miroc_esm', 'mri_esm1', 'noresm1_m', 'ipsl_cm5a_mr', 'miroc5', 'hadgem2_es','mri_esm2_0','mpi_esm_1_2_ham','mpi_esm_1_2_lr','mpi_esm_1_2_lr','cnrm_esm2_1','access_cm2','access_esm1_5','cmcc_cm2_sr5','ipsl_cm6a_lr','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','nesm3','nesm3','nesm3']
@@ -132,9 +134,12 @@ elif (filesystem == 'lustre') & (experiment != 'dcppA') & (~np.isin('era5',model
     root1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     savedir1 = root1
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
-elif (filesystem == 'lustre') & (experiment == 'dcppA') & (~np.isin('era5',model)):
-    #root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_LT'+str(lead_time)
+elif (filesystem == 'lustre') & (experiment == 'dcppA') & (~np.isin('era5',model) & (lead_time_concept == 'FY')):
     root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_FY'+str(lead_time)
+    savedir1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
+    rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
+elif (filesystem == 'lustre') & (experiment == 'dcppA') & (~np.isin('era5',model) & (lead_time_concept == 'LT')):
+    root1 = '/lustre/gmeteo/WORK/PROYECTOS/2022_IMPETUS4CHANGE/WP5/data/DCPP_LT'+str(lead_time)
     savedir1 = '/lustre/gmeteo/WORK/swen/datos/GCMData/'
     rundir = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/pyLamb'
 elif (filesystem == 'lustre') & (experiment == 'historical') & (len(model) == 1) & (model[0] == 'era5'):
@@ -160,10 +165,10 @@ for mm in list(range(len(model))):
     
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     print('Getting target period and time step for '+model[mm]+', '+experiment+', cmip'+str(cmip)+' and lead time (currently only applies for dcppA experiment) '+str(lead_time)+' year(s)...')
-    taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time) #within the function lead_time_f is currently only used if experiment = 'dcppA'
+    taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time,lead_time_concept_f=str(lead_time_concept)) #within the function lead_time_f and lead_time_concept_f is currently only used if experiment = 'dcppA'
     
     #Print the main script configuration to inform the user during execution from one GCM to another
-    print('INFO: Interpolating '+model[mm]+' for '+experiment+' and time period '+str(taryears[0])+' to '+str(taryears[1])+'...')
+    print('INFO: Interpolating '+model[mm]+' for '+experiment+', lead-time '+str(lead_time)+', lead-time concept '+str(lead_time_concept)+' and time period '+str(taryears[0])+' to '+str(taryears[1])+'...')
 
     #obtain numpy vector containing all target years
     years = np.arange(taryears[0],taryears[-1]+1)
@@ -467,7 +472,8 @@ for mm in list(range(len(model))):
     
     #save the final, concatenated file
     if experiment == 'dcppA':
-        newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time)+'y.nc'
+        #newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time)+'y.nc'
+        newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+lead_time_concept+'_'+str(lead_time)+'y.nc'
     else:
         newfile = savedir+'/psl_interp_'+timestep+'rPlev_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'.nc'
     

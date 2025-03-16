@@ -30,27 +30,58 @@ obs = 'era5' #cera20c or mpi_esm_1_2_hr or ec_earth3
 # experiment_out = ['dcppA_1','dcppA_2','dcppA_3','dcppA_4','dcppA_5','dcppA_6','dcppA_7','dcppA_8','dcppA_9','dcppA_10','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
 # lead_time = [1,2,3,4,5,6,7,8,9,10,None] #lead time or forecast year or the dcppA LWT data
 
+# ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+# experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+# experiment_out = ['dcppA_1','dcppA_2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+# lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
+# lead_time_concept = ['FY','FY',None] #lead time concept: FY, LT or None; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f; None for historical experiments.
+
+# ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+# experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+# experiment_out = ['dcppA_lt0','dcppA_lt1','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+# lead_time = [0,1,None] #lead time or forecast year or the dcppA LWT data
+# lead_time_concept = ['LT','LT',None] #lead time concept: FY, LT or None; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f; None for historical experiments.
+
 ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
 experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
-experiment_out = ['dcppA_1','dcppA_2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+experiment_out = ['dcppA_fy1','dcppA_fy2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
 lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
+lead_time_concept = ['FY','FY',None] #lead time concept: FY, LT or None; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f; None for historical experiments.
 
-start_years = [1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1961] #list containing the start years of the experiment defined in <experiment>
-end_years = [2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2028] #list containing the end years of the experiment defined in <experiment>
+# ensemble = ['ec_earth3','ec_earth3','ec_earth3'] #cera20c or mpi_esm_1_2_hr or ec_earth3
+# experiment = ['dcppA','dcppA','historical'] #historical, amip, piControl, 20c or dcppA, used to load the data
+# experiment_out = ['dcppA_fy1','dcppA_fy2','historical'] #used as label in the xarray data array produced here; combines experiment with lead time if indicated
+# lead_time = [1,2,None] #lead time or forecast year or the dcppA LWT data
+# lead_time_concept = ['FY','FY',None] #lead time concept: FY, LT or None; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f; None for historical experiments.
+
+# start_years = [1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1961] #list containing the start years of the experiment defined in <experiment>
+# end_years = [2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2028] #list containing the end years of the experiment defined in <experiment>
+
+#start_years = [1961,1962,1962] #list containing the start years of the experiment defined in <experiment>
+#end_years = [2019,2020,2028] #list containing the end years of the experiment defined in <experiment>
+
+start_years = [1970,1970,1962] #list containing the start years of the experiment defined in <experiment>
+end_years = [2019,2019,2028] #list containing the end years of the experiment defined in <experiment>
 
 # ensemble_color = ['orange','red','black','grey','blue']
 # ensemble_linestyle = ['dashed','dashed','dashed','solid','dotted']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
 
-# seasons = ['ONDJFM','AMJJAS','DJF','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-# months = [[10,11,12,1,2,3],[4,5,6,7,8,9],[12,1,2],[1,2,3]] #list of months corresponding to each season
+# seasons = ['DJF','JFM','MAM','JJA','JAS','DJFM','ASO'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[12,1,2],[1,2,3],[3,4,5],[6,7,8],[7,8,9],[12,1,2,3],[8,9,10]] #list of months corresponding to each season
 
-# seasons = ['JFM','JFMA','OND'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-# months = [[1,2,3],[1,2,3,4],[10,11,12]] #list of months corresponding to each season
+# seasons = ['DJFMAM'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[12,1,2,3,4,5]] #list of months corresponding to each season
 
-seasons = ['JFM','AMJ','JAS','OND'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
-months = [[1,2,3],[4,5,6],[7,8,9],[10,11,12]] #list of months corresponding to each season
+seasons = ['JJASON'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+months = [[6,7,8,9,10,11]] #list of months corresponding to each season
+
+# seasons = ['DJF','MAM','JJA'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[12,1,2],[3,4,5],[6,7,8]] #list of months corresponding to each season
+
+# seasons = ['SON'] #list of seasons to be considered: year, DJF, MAM, JJA or SON
+# months = [[9,10,11]] #list of months corresponding to each season
 
 tarwts = [['PA'],['DANE','PDNE','DCNE'],['DAE','PDE','DCE'], ['DASE','PDSE','DCSE'], ['DAS','PDS','DCS'], ['DASW','PDSW','DCSW'], ['DAW','PDW','DCW'], ['DANW','PDNW','DCNW'], ['DAN','PDN','DCN'], ['PC'], ['U']] #original names for 11 types
 tarwts_name = ['PA','NE','E','SE','S','SW','W','NW','N','PC','U'] #summarized names for 11 types
@@ -80,7 +111,8 @@ repetitions = 100 #number of repetitions used for Monte-Carlo significance testi
 anom = 'yes' #yes or no; calculate correlation measures and RPC on anomalies or raw values, respectively
 exclude_members = 3 #number of members to be excluded for Monte-Carlo significance testing
 rho_critval = 0.279 #critical values for a significant Pearson correlation coefficient for n = 50, alpha=0.05, two-tailed test
-rho_lim = 0.8 #limit of the skill boxplots to be plotted, skill is measured with the Pearson correlation coefficient between the ensemble-mean and the reanalysis. 
+rho_lim = 0.8 #limit of the skill boxplots to be plotted, skill is measured with the Pearson correlation coefficient between the ensemble-mean and the reanalysis.
+rpc_lim = 2 #limit of the RPC boxplots to be plotted, lower limit = rpc_lim*-1, upper limit = rpc_lim
 
 #options used for periodgram, experimental so far, see https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html
 yearly_units = '%' # count, % (relative frequency) or z-score; unit of the yearly LWT counts
@@ -104,6 +136,8 @@ if len(tarwts) != len(tarwts_name):
 
 timestep = 'mon'
 taryears = [np.max(start_years),np.min(end_years)] #years common to all experiments defined in <experiment>
+taryears_vector = np.arange(taryears[0],taryears[1]+1)
+print('the target period to be analysed is '+str(taryears[0])+' to '+str(taryears[1]))
 
 ref_period = reference_period
 print('The reference period used for anomaly calculation is '+str(ref_period))
@@ -111,27 +145,23 @@ print('The reference period used for anomaly calculation is '+str(ref_period))
 # wtnames = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN', 'PDNE', 'PDE', 'PDSE', 'PDS', 'PDSW', 'PDW', 'PDNW', 'PDN', 'PC', 'DCNE', 'DCE', 'DCSE', 'DCS', 'DCSW', 'DCW', 'DCNW', 'DCN', 'U']
 # wtlabel = str(np.array(wtnames)[np.array(tarwts)-1]).replace("[","").replace("]","").replace("'","")
 
-study_years = np.arange(np.array(taryears).min(),np.array(taryears).max()+1,1) #numpy array of years limited by the lower and upper end of considered years
-t_startindex = int(meanperiod/2) #start index of the period to be plotted along the x axis
-t_endindex = int(len(study_years)-(meanperiod/2-1)) #end index of the period to be plotted along the x axis
-
 ##loop through all LWTs, seasons experiments and members of a given model experiment (historical and dcppA with different forecast years)
 for lwt in np.arange(len(tarwts)):
     for sea in np.arange(len(seasons)):
         seaslabel = seasons[sea]
         ##loop throught the lead-times, lt
         for en in np.arange(len(experiment)):
-            print('Aggregating '+str(tarwts[lwt])+' type(s) labelled as '+tarwts_name[lwt]+' for season '+seasons[sea]+' and experiment '+experiment[en]+' with lead-time '+str(lead_time[en])+' over the NH and SH...')
+            print('Aggregating '+str(tarwts[lwt])+' type(s) labelled as '+tarwts_name[lwt]+' for season '+seasons[sea]+' and experiment '+experiment[en]+' with lead-time '+str(lead_time[en])+' and lead-time concept '+str(lead_time_concept[en])+' over the NH and SH...')
             #get ensemble configuration as defined in analysis_functions,py, see get_ensemble_config() function therein
             model,mrun,model_label,tarhours = get_ensemble_config(ensemble[en],experiment[en])
             
-            print('INFO: get monthly LWT counts for '+ensemble[en]+' with '+str(len(mrun))+' runs, lead time '+str(lead_time[en])+', season '+str(seasons[sea])+', start year '+str(start_years[en])+' and end year '+str(end_years[en]))
+            print('INFO: get monthly LWT counts for '+ensemble[en]+' with '+str(len(mrun))+' runs, lead-time '+str(lead_time[en])+', lead-time concept '+str(lead_time_concept[en])+', season '+str(seasons[sea])+', start year '+str(start_years[en])+' and end year '+str(end_years[en]))
            
             for mm in list(range(len(model))):
                 #get metadata for this GCM, incluing start and end year label of the LWT input files to be loaded below
                 if experiment[en] in ('amip','dcppA','historical','piControl'):
                     runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm]) #check whether historical GCM configurations agree with those used in DCPPA ! 
-                    file_taryears, timestep_h = get_target_period(model[mm],experiment[en],cmip_f=cmip,lead_time_f=lead_time[en]) #timestep_h is the temporal resolution of the instantaneous LWT file underlying the monthly counts obtained with makecalcs_parallel_plus_counts.py
+                    file_taryears, timestep_h = get_target_period(model[mm],experiment[en],cmip_f=cmip,lead_time_f=lead_time[en],lead_time_concept_f=lead_time_concept[en]) #timestep_h is the temporal resolution of the instantaneous LWT file underlying the monthly counts obtained with makecalcs_parallel_plus_counts.py
                 elif experiment[en] == '20c':
                     print('get_historical_metadata.py is not called for experiment = '+experiment[en]+'...')
                     file_taryears, timestep_h = get_target_period(model[mm],experiment[en])
@@ -143,7 +173,10 @@ for lwt in np.arange(len(tarwts)):
                 
                 store_wt_nh = store_wt_orig+'/'+timestep+'/'+experiment[en]+'/nh'
                 store_wt_sh = store_wt_orig+'/'+timestep+'/'+experiment[en]+'/sh'
-                if experiment[en] == 'dcppA':
+                if experiment[en] == 'dcppA' and str(lead_time_concept[en]) == 'LT':
+                    wt_file_nh = store_wt_nh+'/wtcount_mon_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_nh_'+str(lead_time_concept[en])+'_'+str(lead_time[en])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the NH LWT catalogues
+                    wt_file_sh = store_wt_sh+'/wtcount_mon_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_sh_'+str(lead_time_concept[en])+'_'+str(lead_time[en])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the SH LWT catalogues
+                elif experiment[en] == 'dcppA' and str(lead_time_concept[en]) == 'FY':
                     wt_file_nh = store_wt_nh+'/wtcount_mon_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_nh_'+str(lead_time[en])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the NH LWT catalogues
                     wt_file_sh = store_wt_sh+'/wtcount_mon_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_sh_'+str(lead_time[en])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the SH LWT catalogues
                 elif experiment[en] == 'historical':
@@ -163,12 +196,12 @@ for lwt in np.arange(len(tarwts)):
                 if seasons[sea] in ('MAM','JJA','SON'):
                     wt = wt.sel(time=(wt['time'].dt.season == seasons[sea]))
                     print('Processing '+seasons[sea]+' season...')
-                elif seasons[sea] in ('DJF','JFM','AMJ','JAS','OND','JFMA','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+                elif seasons[sea] in ('DJF','JFM','AMJ','JAS','ASO','OND','DJFM','JFMA','JJAS','JJASON','ONDJFM','AMJJAS','DJFMAM'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
                     print('Processing '+seasons[sea]+' season...')
                     # wt = wt.isel(time=wt.time.dt.month.isin(months[sea])) #get target months
                     # wt = wt.rolling(time=len(months[sea])).sum() #rolling sum
                     # wt = wt.isel(time=wt.time.dt.month == months[sea][-1]) #get the accumulated values ending in February
-                    wt = get_seasonal_mean(wt,months[sea])
+                    wt = get_seasonal_mean(wt,months[sea]) #assigns the year of the last month
                 elif seasons[sea] == 'year':
                     print('For season[sea] = '+seasons[sea]+', the entire calendar year will be considered.')
                 else:
@@ -176,7 +209,6 @@ for lwt in np.arange(len(tarwts)):
                 
                 #select requested years
                 dates_wt = pd.DatetimeIndex(wt.time.values)
-                #year_ind_wt = np.where((dates_wt.year >= taryears[0]) & (dates_wt.year <= taryears[1]))[0]
                 year_bool = (dates_wt.year >= taryears[0]) & (dates_wt.year <= taryears[1])
                 wt = wt.isel(time=year_bool)
                 
@@ -194,12 +226,13 @@ for lwt in np.arange(len(tarwts)):
                 elif detrending == 'no':
                     print('INFO: As requested by the user, the year-to-year LWT count time series are not detrended.')
                 else:
-                    raise Exceptions('ERROR: check entry for <detrending> input parameter !')
+                    raise Exception('ERROR: check entry for <detrending> input parameter !')
                 
                 #init numpy array to be filled with year-to-year relative LWT frequencies, loaded experiments and lead times
                 if lwt == 0 and sea == 0 and en == 0 and mm == 0:
-                    taryears_index = np.arange(taryears[0],taryears[1]+1) 
-                    wt_rf_np = np.zeros((len(tarwts),len(seasons),len(experiment),len(model),len(taryears_index),len(wt.lon),len(wt.lat)))
+                    #taryears_vector = wt.time.values 
+                    wt_rf_np = np.zeros((len(tarwts),len(seasons),len(experiment),len(model),len(taryears_vector),len(wt.lon),len(wt.lat)))
+                    wt_rf_np[:] = np.nan
                     experiment_loaded = []
                     lead_time_loaded = []
                     #dimensions needed to convert wt_rf_np into xarray data array format
@@ -207,8 +240,16 @@ for lwt in np.arange(len(tarwts)):
                     lon = wt.lon
                     lat = wt.lat
                 
-                #assign
+                # assign
                 wt_rf_np[lwt,sea,en,mm,:,:,:] = wt.counts.values
+                
+                # #if str(lead_time_concept[en]) == 'LT' and seasons[sea] in ('NDJ','DJF','DJFM','NDJF','NDJFM'): #in this case the first winter season is missing
+                # if str(lead_time_concept[en]) == 'LT': #in this case the first winter season is missing
+                #     if wt.time[0]-taryears[0] != 1: #check whether the difference in years is as expected
+                #         raise ValueError('The difference in years between wt.time[0] - taryears[0] is not 1 !')
+                #     wt_rf_np[lwt,sea,en,mm,1:,:,:] = wt.counts.values
+                # else:                    
+                #     wt_rf_np[lwt,sea,en,mm,:,:,:] = wt.counts.values
                 
                 #clean up
                 wt.close()
@@ -224,8 +265,9 @@ for lwt in np.arange(len(tarwts)):
     for sea in np.arange(len(seasons)):
         store_wt_nh_obs = store_wt_orig+'/'+timestep+'/historical/nh'
         store_wt_sh_obs = store_wt_orig+'/'+timestep+'/historical/sh'
-        wt_file_nh_obs = store_wt_nh_obs+'/wtcount_mon_era5_historical_r1i1p1_nh_1940_2022.nc' #path to the NH LWT catalogues
-        wt_file_sh_obs = store_wt_sh_obs+'/wtcount_mon_era5_historical_r1i1p1_sh_1940_2022.nc' #path to the SH LWT catalogues
+        wt_file_nh_obs = store_wt_nh_obs+'/wtcount_mon_era5_historical_r1i1p1_nh_1940_2022.nc' #path to the NH LWT catalogues, these are 3-hourly
+        wt_file_sh_obs = store_wt_sh_obs+'/wtcount_mon_era5_historical_r1i1p1_sh_1940_2022.nc' #path to the SH LWT catalogues, these are 3-hourly
+        file_taryears, timestep_obs = get_target_period('era5','20c')
 
         wt_nh_obs = xr.open_dataset(wt_file_nh_obs)
         wt_sh_obs = xr.open_dataset(wt_file_sh_obs)
@@ -238,7 +280,7 @@ for lwt in np.arange(len(tarwts)):
         if seasons[sea] in ('MAM','JJA','SON'):
             wt_obs = wt_obs.sel(time=(wt_obs['time'].dt.season == seasons[sea]))
             print('Processing '+seasons[sea]+' season...')
-        elif seasons[sea] in ('DJF','JFM','AMJ','JAS','OND','JFMA','ONDJFM','AMJJAS'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
+        elif seasons[sea] in ('DJF','JFM','AMJ','JAS','ASO','OND','DJFM','JFMA','JJAS','JJASON','ONDJFM','AMJJAS','DJFMAM'): #see https://stackoverflow.com/questions/70658388/how-to-select-djfm-season-instead-of-xarray-groupby
             print('Processing '+seasons[sea]+' season...')
             # wt_obs = wt_obs.isel(time=wt_obs.time.dt.month.isin([12,1,2])) #get DJF months
             # wt_obs = wt_obs.rolling(time=3).sum() #rolling sum
@@ -252,6 +294,11 @@ for lwt in np.arange(len(tarwts)):
 
         #select requested years
         dates_wt_obs = pd.DatetimeIndex(wt_obs.time.values)
+        # if seasons[sea] in ('DJF','DJFM'):
+        #     year_bool_obs = (dates_wt_obs.year >= taryears[0]+1) & (dates_wt_obs.year <= taryears[1]) #the first winter season is missing for season averages passing through the end of the year
+        # else:
+        #     year_bool_obs = (dates_wt_obs.year >= taryears[0]) & (dates_wt_obs.year <= taryears[1])
+
         year_bool_obs = (dates_wt_obs.year >= taryears[0]) & (dates_wt_obs.year <= taryears[1])
         wt_obs = wt_obs.isel(time=year_bool_obs)
 
@@ -260,7 +307,7 @@ for lwt in np.arange(len(tarwts)):
 
         #calculate year-to-year relative frequencies (%)
         wt_obs = wt_obs.groupby('time.year').sum('time').rename({'year':'time'})
-        wt_obs.counts[:] = wt_obs.counts / (wt_obs.days_per_month*int(timestep_h[0]))*100
+        wt_obs.counts[:] = wt_obs.counts / (wt_obs.days_per_month*int(timestep_obs[0]))*100
         
         #optional linear detrending
         if detrending == 'yes':
@@ -269,18 +316,34 @@ for lwt in np.arange(len(tarwts)):
         elif detrending == 'no':
             print('INFO: As requested by the user, the year-to-year LWT count time series are not detrended.')
         else:
-            raise Exceptions('ERROR: check entry for <detrending> input parameter !')
+            raise Exception('ERROR: check entry for <detrending> input parameter !')
         
         #init numpy array to be filled with year-to-year relative LWT frequencies, loaded experiments and lead times
         if lwt == 0 and sea == 0:
-            wt_rf_np_obs = np.zeros((len(tarwts),len(seasons),len(taryears_index),len(wt_obs.lon),len(wt_obs.lat)))
+            wt_rf_np_obs = np.zeros((len(tarwts),len(seasons),len(taryears_vector),len(wt_obs.lon),len(wt_obs.lat)))
+            wt_rf_np_obs[:] = np.nan
             #dimensions needed to convert wt_rf_np into xarray data array format
             years = wt_obs.time
             lon = wt_obs.lon
             lat = wt_obs.lat
         
-        #assign
+        # assign
         wt_rf_np_obs[lwt,sea,:,:,:] = wt_obs.counts.values
+
+        # # if str(lead_time_concept[en]) == 'LT' and seasons[sea] in ('NDJ','DJF','DJFM','NDJF','NDJFM'): #in this case the first winter season is missing
+        # if str(lead_time_concept[en]) == 'LT': #in this case the first winter season is missing
+        #     if wt_obs.time[0]-taryears[0] != 1: #check whether the difference in years is as expected
+        #         raise ValueError('The difference in years between wt.time[0] - taryears[0] is not 1 !')
+        #     wt_rf_np_obs[lwt,sea,1:,:,:] = wt_obs.counts.values
+        # else:
+        #     wt_rf_np_obs[lwt,sea,:,:,:] = wt_obs.counts.values            
+
+        # if seasons[sea] in ('NDJ','DJF','NDJF','DJFM','NDJFM'):
+        #     wt_rf_np_obs[lwt,sea,1:,:,:] = wt_obs.counts.values
+        # elif seasons[sea] in ('JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','ONDJFM','AMJJAS'):
+        #     wt_rf_np_obs[lwt,sea,:,:,:] = wt_obs.counts.values
+        # else:
+        #     raise Exception('ERROR: unknown entry in seasons[sea] !')
         
         #clean up
         wt_obs.close()
@@ -604,13 +667,26 @@ for sea in np.arange(len(seasons)):
             minval_rpc = rpc.min()
         else:
             raise Excecption('ERROR: check entry for <rpc_method> input parameter !')
+        
         savename_nh = savedir_rpc+'/boxplot_rpc_'+rpc_method+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_nh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rpc_nh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_nh,dpival,minval_rpc,rpc.max(),critval_f=1)
         savename_sh = savedir_rpc+'/boxplot_rpc_'+rpc_method+'_dtr_'+detrending+'_'+wtlabel2save+'_'+seasons[sea]+'_'+experiment_out[en]+'_vs_'+obs+'_sh_'+str(taryears[0])+'_'+str(taryears[1])+'.'+outformat
-        draw_boxplot(rpc_sh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_sh,dpival,minval_rpc,rpc.max(),critval_f=1)
-        #and clean
+        
+        #get upper and lower boxplot limit and plot the RPCs
+        if rpc_lim == 'from_data':
+            print('The lower and upper limit of the RPC boxplots is taken from the data.')
+            rpc_box_max == rpc.max()
+            rpc_box_min == minval_rpc
+        else:
+            print('The lower and upper limit of the RPC boxplots is '+str(rpc_lim*-1)+' and '+str(rpc_lim)+', respectively.')
+            rpc_box_max = rpc_lim
+            rpc_box_min = rpc_lim*-1
+        draw_boxplot(rpc_nh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_nh,dpival,rpc_box_min,rpc_box_max,critval_f=1)
+        draw_boxplot(rpc_sh_step,boxplot_xticks,tarwts_name,cbarlabel_rpc,savename_sh,dpival,rpc_box_min,rpc_box_max,critval_f=1)
+        
+        #then clean
         rpc_nh_step.close()
         rpc_sh_step.close()
+        del(rpc_nh_step,rpc_sh_step)
 
 #calculate pattern correlation between skill and ration of predictable components, do this for the entire domain (NH+SH) and separately for NH and SH
 pattern_r_rho_rpc = xr.corr(rho.stack(lon_lat=('lon','lat')),rpc.stack(lon_lat=('lon','lat')),dim='lon_lat')

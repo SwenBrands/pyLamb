@@ -23,29 +23,41 @@ ensemble_color = ['orange','black','grey','blue']
 ensemble_linestyle = ['dashed','dashed','solid','dotted']
 experiment = ['20c','20c','dcppA','historical'] #historical, amip, piControl, 20c or dcppA
 experiment_out = ['20c_era5','20c_cera20c','dcppA','historical'] #used to distinct several 20c experiments in the xr data array created by this script. Is important when calculating correlations.
-lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
+# lead_time = [1,5,10] #lead time or forecast year or the dcppA LWT data
+lead_time = [0,1] #list of lead times or forecast years or the dcppA LWT data
+lead_time_concept = ['LT','LT'] #lead time concept: FY, LT or None; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f; None for historical experiments.
+plot_lead_time = 0 #lead-time for which the raw and standardized anomaly time-series will be plotted.
 
 ## this is the configuration for use without ERA5
 # taryears_obs = [[1961,2010],[1965,2010],[1970,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
 # taryears_hist = [[1961,2019],[1965,2023],[1970,2028]]
 # taryears_obs = [[1901,2010],[1901,2010],[1901,2010]]
 
-## this is the configuration for use with ERA5
-#taryears_obs1 = [[1940,2022],[1940,2022],[1940,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
-taryears_obs1 = [[1961,2022],[1961,2022],[1961,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
-taryears_obs2 = [[1961,2010],[1961,2010],[1961,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
-#taryears_obs2 = [[1901,2010],[1901,2010],[1901,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
-taryears_hist = [[1961,2028],[1961,2028],[1961,2028]]
-taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+# ## this is the configuration for use with ERA5, the lists for taryears_obs1, taryears_obs2, taryears_hist and taryears_dcppa have the same length than the list <lead_time> defined above
+# #taryears_obs1 = [[1940,2022],[1940,2022],[1940,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+# taryears_obs1 = [[1961,2022],[1961,2022],[1961,2022]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+# taryears_obs2 = [[1961,2010],[1961,2010],[1961,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+# #taryears_obs2 = [[1901,2010],[1901,2010],[1901,2010]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+# taryears_hist = [[1961,2028],[1961,2028],[1961,2028]]
+# taryears_dcppa = [[1961,2019],[1965,2023],[1970,2028]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+
+## this is the configuration for use with ERA5, the lists for taryears_obs1, taryears_obs2, taryears_hist and taryears_dcppa have the same length than the list <lead_time> defined above
+#taryears_obs1 = [[1940,2022]]*len(lead_time) #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears_obs1 = [[1970,2019]]*len(lead_time) #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears_obs2 = [[1970,2010]]*len(lead_time) #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+#taryears_obs2 = [[1901,2010]]*len(lead_time) #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+taryears_hist = [[1970,2028]]*len(lead_time)
+taryears_dcppa = [[1970,2019],[1970,2019]] #list containing the start and end years for each ensemble, [1850,2261] for PiControl, [1901,2010] for 20c and historical, [1979,2014] or [1979,2017] for amip, [1971, 2028] for DCPPA
+tarhours = [0, 6, 12, 18] #hours of the day to be selected, may be different from the timescale the data is saved on (3hr in case of ERA5 and CERA-20C, called <hours_from_data> below)
+# tarhours = [0, 3, 6, 9, 12, 15, 18, 21]
 
 #city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-#city = ['Wellington','Madrid','SantiagoDC','Madrid'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-city = ['Escorial','SantiagoDC','Wellington']
+city = ['Wellington','SantiagoDC']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
-seasons = ['OND','JFM','ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA, SON, JFM, OND, ONDJFM or AMJJAS
-tarwts = [1] #[7,15,24] westerlies, [5,13,22] southerlies, [9,17,26] northerly, 15 = pure directional west
+# seasons = ['OND','JFM','ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA, SON, JFM, OND, ONDJFM or AMJJAS
+seasons = ['DJFMAM']
+tarwts = [7,15,24] #[7,15,24] westerlies, [5,13,22] southerlies, [9,17,26] northerly, 15 = pure directional west
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
 
 figs = '/lustre/gmeteo/WORK/swen/datos/tareas/lamb_cmip5/figs' #base path to the output figures
@@ -119,7 +131,7 @@ for sea in np.arange(len(seasons)):
             end_year_step = taryears[en][lt][1].values
             
             #get ensemble configuration as defined in analysis_functions,py, see get_ensemble_config() function therein
-            model,mrun,model_label,tarhours = get_ensemble_config(ensemble[en],experiment[en])
+            model,mrun,model_label,hours_from_data = get_ensemble_config(ensemble[en],experiment[en])
             if experiment[en] == 'dcppA':
                 mrun_dcppA = mrun
             elif experiment[en] == 'historical':
@@ -155,9 +167,12 @@ for sea in np.arange(len(seasons)):
                 
                 for mm in list(range(len(model))):
                     #get metadata for this GCM, incluing start and end year label of the LWT input files to be loaded below
-                    if experiment[en] in ('amip','dcppA','historical','piControl'):
+                    if experiment[en] in ('amip','historical','piControl'):
                         runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm]) #check whether historical GCM configurations agree with those used in DCPPA ! 
                         file_taryears, timestep = get_target_period(model[mm],experiment[en],cmip_f=cmip,lead_time_f=lead_time[lt])
+                    elif experiment[en] == 'dcppA':
+                        runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm]) #check whether historical GCM configurations agree with those used in DCPPA ! 
+                        file_taryears, timestep = get_target_period(model[mm],experiment[en],cmip_f=cmip,lead_time_concept_f=str(lead_time_concept[lt]),lead_time_f=lead_time[lt])
                     elif experiment[en] == '20c':
                         print('get_historical_metadata.py is not called for experiment = '+experiment[en]+'...')
                         file_taryears, timestep = get_target_period(model[mm],experiment[en])
@@ -169,7 +184,7 @@ for sea in np.arange(len(seasons)):
                     
                     store_wt = store_wt_orig+'/'+timestep+'/'+experiment[en]+'/'+hemis
                     if experiment[en] == 'dcppA':
-                        wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time[lt])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
+                        wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
                     elif experiment[en] in ('historical', 'amip', '20c'):
                         wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
                     else:
@@ -184,6 +199,9 @@ for sea in np.arange(len(seasons)):
                         print('Processing '+seasons[sea]+' season...')
                     elif seasons[sea] in ('DJF'):
                         wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,12]))
+                        print('Processing '+seasons[sea]+' season...')
+                    elif seasons[sea] in ('DJFMAM'):
+                        wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,3,4,5,12]))
                         print('Processing '+seasons[sea]+' season...')    
                     elif seasons[sea] in ('ONDJFM'):
                         wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,3,10,11,12]))
@@ -201,13 +219,6 @@ for sea in np.arange(len(seasons)):
                     else:
                         raise Exception('ERROR: Unknown entry for '+seasons[sea]+' !!')
                         
-                    # #add one year for DJF values
-                    # if seasons[sea] == 'DJF':
-                        # print('Adding one year to December datetime64 index values for '+seasons[sea]+'...')
-                        # dates_pd = pd.DatetimeIndex(wt.time.values)
-                        # dates_pd[dates_pd.month==12][:] = dates_pd[dates_pd.month==12]+pd.DateOffset(years=1)
-                        # wt.time.values[:] = dates_pd
-                    
                     #get the gridbox nearest to tarlon and tarlat
                     lon_center = wt.lon.sel(lon=tarlon,method='nearest').values
                     lat_center = wt.lat.sel(lat=tarlat,method='nearest').values        
@@ -241,6 +252,12 @@ for sea in np.arange(len(seasons)):
                             arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
                             end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
                             wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 2) & (arr_tarwts.time.dt.day == 28) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
+                            wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
+                        elif seasons[sea] in ('DJFMAM'):
+                            hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
+                            arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
+                            end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
+                            wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 5) & (arr_tarwts.time.dt.day == 31) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
                             wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
                         # elif seasons[sea] in ('ONDJFM'):
                         #     hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
@@ -326,7 +343,7 @@ for sea in np.arange(len(seasons)):
                 runstn.plot()
                 #runnoise.plot()
                 if experiment[en] == 'dcppA':
-                    savename_stn = timeseries_dir+'/STN_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
+                    savename_stn = timeseries_dir+'/STN_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
                 else:
                     savename_stn = timeseries_dir+'/STN_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel+'_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+seaslabel+'_'+aggreg+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'_lat'+str(wt_center.lat.values)+'.'+outformat
                 plt.savefig(savename_stn,dpi=dpival)
@@ -367,7 +384,7 @@ for sea in np.arange(len(seasons)):
                 #plt.text(text_x,text_y, '$\sigma$ / $\mu$ = '+str(np.round(np.nanstd(runmeans)/np.nanmean(runmeans),3)),size=8) #plot standard deviation of running ensemble mean time series as indicator of forced response
                 plt.text(text_x,text_y, 'temporal mean and minimum $\sigma$ = '+str(np.round(np.nanmean(runnoise),3))+' and '+str(np.round(np.nanmin(runnoise),3)),size=8) #plot temporal mean of the running standard deviation of the decadal mean LWT frequency anomalies from each member
                 if experiment[en] == 'dcppA':
-                    savename_ts = timeseries_dir+'/timeseries_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
+                    savename_ts = timeseries_dir+'/timeseries_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
                 else:
                     savename_ts = timeseries_dir+'/timeseries_'+seasons[sea]+'_'+model[mm]+'_'+experiment[en]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(start_year_step)+'_'+str(end_year_step)+'_'+city[cc]+'_lon'+str(wt_center.lon.values)+'lat'+str(wt_center.lat.values)+'.'+outformat
                 plt.savefig(savename_ts,dpi=dpival)
@@ -452,10 +469,10 @@ for sea in np.arange(len(seasons)):
             for exp in ['historical','dcppA']:
                 stn_all.sel(season=seasons[sea],lead_time=lead_time[lt],experiment=exp,city=city[cc]).plot()
             plt.ylim(0,stn_all.sel(experiment=['historical','dcppA']).max().values) #the maximum for all GCM experiments i.e. CERA-20C and ERA5 (in this script is a dummy ensemble with ten equal members and stn = inf anywhere) are excluded
-            plt.title(wtlabel.replace(" ","_")+'_'+seasons[sea]+'_FY'+str(lead_time[lt])+', '+city[cc])
+            plt.title(wtlabel.replace(" ","_")+'_'+seasons[sea]+'_'+str(lead_time_concept[lt])+str(lead_time[lt])+', '+city[cc])
             plt.legend(['critval']+['historical','dcppA'])
             #savename_stn_city = figs+'/'+model[mm]+'/timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
-            savename_stn_city = comparison_dir+'/stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+            savename_stn_city = comparison_dir+'/stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_timeseries_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
             plt.savefig(savename_stn_city,dpi=dpival)
             plt.close('all')
             del(fig)
@@ -480,7 +497,7 @@ for sea in np.arange(len(seasons)):
                 #equal y axis limit for all experiments of the same city
                 plt.ylim([runmeans_i_all.sel(season=seasons[sea],city=city[cc]).min().values,runmeans_i_all.sel(season=seasons[sea],city=city[cc]).max().values])
             elif axes_config == 'individual':
-                print('The x-axis in the time-series plot is optimized for the '+seasons[sea]+' season and lead-time = '+str(lead_time[lt])+' years.')
+                print('The x-axis in the time-series plot is optimized for the '+seasons[sea]+' season, lead-time concept '+str(lead_time_concept[lt])+' and lead-time = '+str(lead_time[lt])+' years.')
             else:
                 raise Exception('ERROR: unknown entry for <axes_config> input parameter !')
             
@@ -491,10 +508,10 @@ for sea in np.arange(len(seasons)):
             rho1_all[lt,cc] = rho1
             rho2_all[lt,cc] = rho2
             rho3_all[lt,cc] = rho3
-            plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', FY'+str(lead_time[lt])+', '+city[cc]+': r(dcppA-hist) = '+str(rho1.round(2).values)+', r(dcppA-obs) = '+str(rho2.round(2).values)+', r(hist-obs) = '+str(rho3.round(2).values), size = 8)
+            plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', '+str(lead_time_concept[lt])+str(lead_time[lt])+', '+city[cc]+': r(dcppA-hist) = '+str(rho1.round(2).values)+', r(dcppA-obs) = '+str(rho2.round(2).values)+', r(hist-obs) = '+str(rho3.round(2).values), size = 8)
             
             #save the figure
-            savename_ts_all = comparison_dir+'/timeseries_'+seasons[sea]+'_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+            savename_ts_all = comparison_dir+'/timeseries_'+seasons[sea]+'_'+exp_label+'_'+city[cc]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
             plt.savefig(savename_ts_all,dpi=dpival)
             plt.close('all')
             del(fig)
@@ -507,8 +524,8 @@ for sea in np.arange(len(seasons)):
         #plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
         plt.xlim([study_years[t_startindex:t_endindex].min()-0.5,study_years[t_startindex:t_endindex].max()+0.5])
         plt.ylim(-0.5,len(city)-0.5)
-        plt.title(wtlabel.replace(" ","_")+', SNR dcppA '+seasons[sea]+' FY'+str(lead_time[lt])+' minus SNR historical')
-        savename_diff_stn = comparison_dir+'/pcolor_diffstn_'+seasons[sea]+'_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+        plt.title(wtlabel.replace(" ","_")+', SNR dcppA '+seasons[sea]+' '+str(lead_time_concept[lt])+str(lead_time[lt])+' minus SNR historical')
+        savename_diff_stn = comparison_dir+'/pcolor_diffstn_'+seasons[sea]+'_'+exp_label+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.savefig(savename_diff_stn,dpi=dpival)
         plt.close('all')
         del(fig)
@@ -544,11 +561,11 @@ for sea in np.arange(len(seasons)):
             plt.ylim(-0.5,len(city)-0.5)
             #set title and savename
             if exp == 'dcppA':
-                savename_dcppa_stn = comparison_dir+'/pcolor_stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_'+exp+'_FY'+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
-                plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', '+exp+', FY'+str(lead_time[lt])+', SNR')
+                savename_dcppa_stn = comparison_dir+'/pcolor_stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_'+exp+'_'+str(lead_time_concept[lt])+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+                plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', '+exp+', '+str(lead_time_concept[lt])+str(lead_time[lt])+', SNR')
             else:
-                savename_dcppa_stn = comparison_dir+'/pcolor_stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_'+exp+'_paired_with_FY'+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
-                plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', '+exp+' paired with dcppA FY'+str(lead_time[lt])+', SNR')
+                savename_dcppa_stn = comparison_dir+'/pcolor_stn_stdcritval_'+seasons[sea]+'_'+str(std_critval)+'_'+exp+'_paired_with_'+str(lead_time_concept[lt])+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+                plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', '+exp+' paired with dcppA '+str(lead_time_concept[lt])+str(lead_time[lt])+', SNR')
             plt.savefig(savename_dcppa_stn,dpi=dpival)
             plt.close('all')
             del(fig)
@@ -560,8 +577,8 @@ for sea in np.arange(len(seasons)):
         #plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
         plt.xlim([study_years[t_startindex:t_endindex].min()-0.5,study_years[t_startindex:t_endindex].max()+0.5])
         plt.ylim(-0.5,len(city)-0.5)
-        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', dcppa FY'+str(lead_time[lt])+' minus historical')
-        savename_diff_noise = comparison_dir+'/pcolor_diffstd_'+seasons[sea]+'_dcppa_FY'+str(lead_time[lt])+'y_minus_hist_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', dcppa '+str(lead_time_concept[lt])+str(lead_time[lt])+' minus historical')
+        savename_diff_noise = comparison_dir+'/pcolor_diffstd_'+seasons[sea]+'_dcppa_'+str(lead_time_concept[lt])+str(lead_time[lt])+'y_minus_hist_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.savefig(savename_diff_noise,dpi=dpival)
         plt.close('all')
         del(fig)
@@ -572,8 +589,8 @@ for sea in np.arange(len(seasons)):
         #plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
         plt.xlim([study_years[t_startindex:t_endindex].min()-0.5,study_years[t_startindex:t_endindex].max()+0.5])
         plt.ylim(-0.5,len(city)-0.5)
-        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', dcppa FY'+str(lead_time[lt]) + ' standard deviation')
-        savename_dcppa_noise = comparison_dir+'/pcolor_std_'+seasons[sea]+'_dcppa_FY'+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', dcppa '+str(lead_time_concept[lt])+str(lead_time[lt]) + ' standard deviation')
+        savename_dcppa_noise = comparison_dir+'/pcolor_std_'+seasons[sea]+'_dcppa_'+str(lead_time_concept[lt])+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.savefig(savename_dcppa_noise,dpi=dpival)
         plt.close('all')
         del(fig)
@@ -584,9 +601,9 @@ for sea in np.arange(len(seasons)):
         #plt.xlim(xlim2pcolor[0],xlim2pcolor[1])
         plt.xlim([study_years[t_startindex:t_endindex].min()-0.5,study_years[t_startindex:t_endindex].max()+0.5])
         plt.ylim(-0.5,len(city)-0.5)
-        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', historical paired with dcppa FY'+str(lead_time[lt]) + ' standard deviation')
+        plt.title(wtlabel.replace(" ","_")+', '+seasons[sea]+', historical paired with dcppa '+str(lead_time_concept[lt])+str(lead_time[lt]) + ' standard deviation')
         #plt.gca().set_aspect('equal')
-        savename_dcppa_noise = comparison_dir+'/pcolor_std_'+seasons[sea]+'_historical_paired_with_FY'+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
+        savename_dcppa_noise = comparison_dir+'/pcolor_std_'+seasons[sea]+'_historical_paired_with_'+str(lead_time_concept[lt])+str(lead_time[lt])+'y_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_ctr_'+center_wrt+'_'+str(study_years[0])+'_'+str(study_years[-1])+'.'+outformat
         plt.savefig(savename_dcppa_noise,dpi=dpival)
         plt.close('all')
         del(fig)
@@ -617,77 +634,78 @@ for sea in np.arange(len(seasons)):
         plt.close('all')
         del(fig)
 
-#plot figures involving all seasons
-for sea in np.arange(len(seasons)):
-    fig = plt.figure()
-    for cc in np.arange(len(city)):
-        #get statistics to be plotted
-        hist_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).min().values
-        hist_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).max().values
-        hist_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).mean().values
+# #plot figures involving all seasons
+# for sea in np.arange(len(seasons)):
+#     fig = plt.figure()
+#     for cc in np.arange(len(city)):
+#         #get statistics to be plotted
+#         hist_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).min().values
+#         hist_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).max().values
+#         hist_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='historical',city=city[cc],lead_time=1).mean().values
         
-        fy1_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).min().values
-        fy1_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).max().values
-        fy1_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).mean().values
+#         fy1_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).min().values
+#         fy1_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).max().values
+#         fy1_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=1).mean().values
 
-        fy5_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).min().values
-        fy5_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).max().values
-        fy5_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).mean().values
+#         fy5_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).min().values
+#         fy5_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).max().values
+#         fy5_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=5).mean().values
         
-        fy10_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).min().values
-        fy10_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).max().values
-        fy10_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).mean().values
+#         fy10_min = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).min().values
+#         fy10_max = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).max().values
+#         fy10_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment='dcppA',city=city[cc],lead_time=10).mean().values
         
-        obs_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment=rho_ref,city=city[cc],lead_time=1).mean().values
+#         obs_mean = wt_agg_tmean_all.sel(season=seasons[sea],experiment=rho_ref,city=city[cc],lead_time=1).mean().values
         
-        #and plot them
-        plt.plot([hist_min,hist_max],[cc, cc],color='blue')
-        plt.plot(hist_mean,cc,color='blue',linestyle='None',marker='D')        
-        plt.plot([fy1_min,fy1_max],[cc+0.3, cc+0.3],color='green')
-        plt.plot(fy1_mean,cc+0.3,color='green',linestyle='None',marker='D')        
-        plt.plot([fy5_min,fy5_max],[cc+0.2, cc+0.2],color='red')
-        plt.plot(fy5_mean,cc+0.2,color='red',linestyle='None',marker='D')        
-        plt.plot([fy10_min,fy10_max],[cc+0.1, cc+0.1],color='black')
-        plt.plot(fy10_mean,cc+0.1,color='black',linestyle='None',marker='D')        
-        plt.plot(obs_mean,cc+0.4,color='orange',linestyle='None',marker='D')
-    plt.xlabel('Relative frequency (%)')
-    yticks = np.arange(len(city))+0.2
-    plt.yticks(ticks=yticks,labels=city)
-    plt.legend(['HIST spread','HIST mean','FY1 spread','FY1 mean','FY5 spread','FY5 mean','FY10 spread','FY10 mean','ERA5 mean'])
-    savename_barplots = comparison_dir+'/barplot_histspread_dcppAmean_allcities_'+seasons[sea]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(ref_period[0])+'_'+str(ref_period[-1])+'.'+outformat
-    plt.savefig(savename_barplots,dpi=dpival)
-    plt.close('all')
+#         #and plot them
+#         plt.plot([hist_min,hist_max],[cc, cc],color='blue')
+#         plt.plot(hist_mean,cc,color='blue',linestyle='None',marker='D')        
+#         plt.plot([fy1_min,fy1_max],[cc+0.3, cc+0.3],color='green')
+#         plt.plot(fy1_mean,cc+0.3,color='green',linestyle='None',marker='D')        
+#         plt.plot([fy5_min,fy5_max],[cc+0.2, cc+0.2],color='red')
+#         plt.plot(fy5_mean,cc+0.2,color='red',linestyle='None',marker='D')        
+#         plt.plot([fy10_min,fy10_max],[cc+0.1, cc+0.1],color='black')
+#         plt.plot(fy10_mean,cc+0.1,color='black',linestyle='None',marker='D')        
+#         plt.plot(obs_mean,cc+0.4,color='orange',linestyle='None',marker='D')
+#     plt.xlabel('Relative frequency (%)')
+#     yticks = np.arange(len(city))+0.2
+#     plt.yticks(ticks=yticks,labels=city)
+#     plt.legend(['HIST spread','HIST mean','FY1 spread','FY1 mean','FY5 spread','FY5 mean','FY10 spread','FY10 mean','ERA5 mean'])
+#     savename_barplots = comparison_dir+'/barplot_histspread_dcppAmean_allcities_'+seasons[sea]+'_'+model[mm]+'_'+str(len(mrun))+'mem_'+wtlabel.replace(" ","_")+'_'+str(ref_period[0])+'_'+str(ref_period[-1])+'.'+outformat
+#     plt.savefig(savename_barplots,dpi=dpival)
+#     plt.close('all')
     
-#plot the raw and standardized dcppA (forecast year 1) and historical signal, as well as the observed time-series for each city
+#plot the raw and standardized dcppA (forecast year 1) and historical signal, as well as the observed time-series for each city, for the minimum lead time
 for sea in np.arange(len(seasons)):
     for cc in np.arange(len(city)):
+        plot_lead_time_concept = lead_time_concept[int(np.where(np.array(lead_time)==plot_lead_time)[0])]
         #calculate Pearson correlation coefficient between ERA5 and dcppA ensemble-mean time series for the raw data
-        rho_dcppa_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1),signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1))
-        rho_cera20c_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1),signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1))
+        rho_dcppa_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=plot_lead_time),signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=plot_lead_time))
+        rho_cera20c_era5 = xr.corr(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=plot_lead_time),signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=plot_lead_time))
         #plot raw values
         fig = plt.figure()
-        signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1).plot(color='black',label='ERA5')
-        signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1).plot(color='grey',linestyle='dotted',label='CERA-20C')
-        signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1).plot(color='red',label='dcppA')
-        #signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=1).plot(color='blue')
+        signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=plot_lead_time).plot(color='black',label='ERA5')
+        signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=plot_lead_time).plot(color='grey',linestyle='dotted',label='CERA-20C')
+        signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=plot_lead_time).plot(color='red',label='dcppA')
+        #signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=plot_lead_time).plot(color='blue')
         
         plt.title(wtlabel+' in '+seasons[sea]+': '+str(np.round(rho_dcppa_era5.values,2))+' / '+str(np.round(rho_cera20c_era5.values,2)))
         plt.legend()
-        savename_ts_signal_raw = comparison_dir+'/timeseries_raw_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+'_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
+        savename_ts_signal_raw = comparison_dir+'/timeseries_raw_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+str(plot_lead_time_concept)+str(plot_lead_time)+'y_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
         plt.savefig(savename_ts_signal_raw,dpi=dpival)
         plt.close('all')
 
         #plot standardized anomalies
         fig = plt.figure()
-        z_transform(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='black',label='ERA5')
-        z_transform(signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='grey',linestyle='dotted',label='CERA-20C')
-        z_transform(signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='red',label='dcppA')
-        #z_transform(signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=1)).plot(color='blue')
+        z_transform(signal_all.sel(experiment='20c_era5',season=seasons[sea],city=city[cc],lead_time=np.nanmin(lead_time))).plot(color='black',label='ERA5')
+        z_transform(signal_all.sel(experiment='20c_cera20c',season=seasons[sea],city=city[cc],lead_time=np.nanmin(lead_time))).plot(color='grey',linestyle='dotted',label='CERA-20C')
+        z_transform(signal_all.sel(experiment='dcppA',season=seasons[sea],city=city[cc],lead_time=np.nanmin(lead_time))).plot(color='red',label='dcppA')
+        #z_transform(signal_all.sel(experiment='historical',season=seasons[sea],city=city[cc],lead_time=np.nanmin(lead_time))).plot(color='blue')
         
         plt.title(wtlabel+' in '+seasons[sea]+': '+str(np.round(rho_dcppa_era5.values,2))+' / '+str(np.round(rho_cera20c_era5.values,2)))
         plt.legend()
-        savename_ts_signal_std = comparison_dir+'/timeseries_std_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+'_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
+        savename_ts_signal_std = comparison_dir+'/timeseries_std_'+seasons[sea]+'_'+wtlabel.replace(" ","_")+'_'+str(plot_lead_time_concept)+str(plot_lead_time)+'y_'+str(study_years[0])+'_'+str(study_years[-1])+'_'+city[cc]+'.'+outformat
         plt.savefig(savename_ts_signal_std,dpi=dpival)
         plt.close('all')
 
-print('INFO: signal2noise_local_extended_season.py has run successfully!')
+print('INFO: signal2noise.py has run successfully!')

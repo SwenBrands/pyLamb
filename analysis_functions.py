@@ -123,7 +123,7 @@ def get_ensemble_config(ensemble_f,experiment_f):
         raise Exception('ERROR: unknown entry for <ensemble_f> and/or <experiment_f> input parameters !')
     return(model_f,mrun_f,model_label_f,tarhours_f)
 
-def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
+def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None,lead_time_concept_f=None):
     '''returns the target period (taryears_f) and timestep (timestep_f) to be used in the analyses as a function of the gcm or reanalysis (<model_f>), experiment (<experiment_f>) and cmip generation (<cmip_f>)'''
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
     if experiment_f == 'amip' and cmip_f == 5:
@@ -135,35 +135,67 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == 'amip' and cmip_f == 6 and model_f == 'ec_earth3':
         taryears_f=[1979,2017]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 1:
+    #for lead time concept FY
+    elif experiment_f == 'dcppA' and lead_time_f == 1 and lead_time_concept_f == 'FY':
         taryears_f=[1961,2019]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 2:
+    elif experiment_f == 'dcppA' and lead_time_f == 2 and lead_time_concept_f == 'FY':
         taryears_f=[1962,2020]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 3:
+    elif experiment_f == 'dcppA' and lead_time_f == 3 and lead_time_concept_f == 'FY':
         taryears_f=[1963,2021]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 4:
+    elif experiment_f == 'dcppA' and lead_time_f == 4 and lead_time_concept_f == 'FY':
         taryears_f=[1964,2022]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 5:
+    elif experiment_f == 'dcppA' and lead_time_f == 5 and lead_time_concept_f == 'FY':
         taryears_f=[1965,2023]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 6:
+    elif experiment_f == 'dcppA' and lead_time_f == 6 and lead_time_concept_f == 'FY':
         taryears_f=[1966,2024]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 7:
+    elif experiment_f == 'dcppA' and lead_time_f == 7 and lead_time_concept_f == 'FY':
         taryears_f=[1967,2025]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 8:
+    elif experiment_f == 'dcppA' and lead_time_f == 8 and lead_time_concept_f == 'FY':
         taryears_f=[1968,2026]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 9:
+    elif experiment_f == 'dcppA' and lead_time_f == 9 and lead_time_concept_f == 'FY':
         taryears_f=[1969,2027]
         timestep_f = '6h'
-    elif experiment_f == 'dcppA' and lead_time_f == 10:
+    elif experiment_f == 'dcppA' and lead_time_f == 10 and lead_time_concept_f == 'FY':
         taryears_f=[1970,2028]
+        timestep_f = '6h'
+    #for lead time concept LT
+    elif experiment_f == 'dcppA' and lead_time_f == 0 and lead_time_concept_f == 'LT':
+        taryears_f=[1960,2019]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 1 and lead_time_concept_f == 'LT':
+        taryears_f=[1961,2020]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 2 and lead_time_concept_f == 'LT':
+        taryears_f=[1962,2021]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 3 and lead_time_concept_f == 'LT':
+        taryears_f=[1963,2022]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 4 and lead_time_concept_f == 'LT':
+        taryears_f=[1964,2023]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 5 and lead_time_concept_f == 'LT':
+        taryears_f=[1965,2024]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 6 and lead_time_concept_f == 'LT':
+        taryears_f=[1966,2025]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 7 and lead_time_concept_f == 'LT':
+        taryears_f=[1967,2026]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 8 and lead_time_concept_f == 'LT':
+        taryears_f=[1968,2027]
+        timestep_f = '6h'
+    elif experiment_f == 'dcppA' and lead_time_f == 9 and lead_time_concept_f == 'LT':
+        taryears_f=[1969,2028]
         timestep_f = '6h'
     elif experiment_f == 'historical' and model_f == 'ec_earth3': #currently set to 1961-2028 for comparison of the historical+ssp245 runs with the dcppA runs
         print('WARNING: '+model_f+' '+experiment_f+' runs have been exceptionally extended with ssp245 runs to cover the 1961-2028 period! Turn this feature off in future versions of the <get_target_period()> function within analysis_functions.py!')
@@ -198,9 +230,11 @@ def get_target_period(model_f,experiment_f,cmip_f=None,lead_time_f=None):
     elif experiment_f == '20c' and model_f == 'cera20c':
         taryears_f=[1901,2010]
         timestep_f = '3h'
+        #timestep_f = '6h'
     elif experiment_f == '20c' and model_f == 'era5':
         taryears_f=[1940,2022]
         timestep_f = '3h'
+        #timestep_f = '6h'
     else:
         raise Exception('Error: check entry for <experiment_f>, <model_f> and/or <lead_time_f> !')
     return(taryears_f,timestep_f)

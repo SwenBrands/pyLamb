@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#send to queue with e.g.:
-#qsub -N makecalcs -l walltime=10:00:00 -l mem=64gb -q himem -e error.log -o out.log -l nodes=1:ppn=12 launchme.sh
-#load your software
+# send to queue with e.g.:
+# sbatch --job-name=skill_decadal --partition=meteo_long --mem=28G --time=04:00:00 --nodes=1 --ntasks-per-node=1 --cpus-per-task=1 launchme.sh &
+# load your software
 source ${HOME}/.bashrc
 
 #input parameters

@@ -34,17 +34,19 @@ exec(open('analysis_functions.py').read()) #a function assigning metadata to the
 ########################################################################
 #Note: The time period is filtered in the previous interpolation step accomplished by <interpolator_xesmf.py>
 
-n_par_jobs = 16 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
-experiment = 'historical' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA
+n_par_jobs = 32 #number of parallel jobs, see https://queirozf.com/entries/parallel-for-loops-in-python-examples-with-joblib
+experiment = '20c' #historical, 20c, amip, ssp245, ssp585, rcp85 piControl or dcppA; currently 20 for cera20c and historical for era5; fix this inconsistency in the future !
 home = os.getenv('HOME')
 filesystem = 'lustre'
-hemis = 'sh' #sh or nh
+hemis = 'nh' #sh or nh
 save_indices = 'no' #save the 6 indices of the Lamb scheme, 'yes' or 'no'
 calc_monthly_counts = 'yes' # yes or no, calculate monthly LWT count, this part runs in parallel
 monthly_calc = 'serial' # serial or parallel, how to calculate the monthly LWT counts
 verbose_level = 2 #detail of verbose level used by the joblib Parallel function
 compression_level = None #integer between 1 and 9 or None, compression level of the output files
-lead_time = 9 #lead time in years, currently only used for dcppA experiments
+lead_time = 1 #lead time in years, currently only used for dcppA experiments
+lead_time_concept = 'LT' #lead time concept: FY or LT; FY to consider forecast years (starting on January 1 and ending in December 31) or LT to leave the forecast as is, i.e. starting on November 1 and ending in October 31 of the following year for EC-Earth r1i1pf1f to r10i1pf1f.
+force_6h = 'no' #currently only applied for ERA5 and CERA-20C; if set to yes, filters out the data at 0, 6, 12, 18 UTC in case the input data is 3-hourly.
 
 #save monthly counts for all 27 types
 tarwts = np.arange(1,28) #The full LWT scheme will be considered, 1 = PA, 27 = U
@@ -63,9 +65,9 @@ tarwts_name = ['PA', 'DANE', 'DAE', 'DASE', 'DAS', 'DASW', 'DAW', 'DANW', 'DAN',
 # model = ['era5']
 # mrun =  ['r1i1p1']
 
-# historical runs extended with ssp245 to compare with dcppA runs below
-model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
-mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
+# # historical runs extended with ssp245 to compare with dcppA runs below
+# model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
+# mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r17i1p1f1','r18i1p1f1','r19i1p1f1','r21i1p1f1']
 
 # # dcppA runs
 # model = ['ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3','ec_earth3']
@@ -91,9 +93,9 @@ mrun = ['r1i1p1f1','r4i1p1f1','r10i1p1f1','r12i1p1f1','r14i1p1f1','r16i1p1f1','r
 #model = ['ec_earth3_veg']
 #mrun = ['r10i1p1f1']
 
-# ## accomplished CERA-20C LWT catalogues for both the NH and SH
-# model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
-# mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
+# accomplished CERA-20C LWT catalogues for both the NH and SH
+model = ['cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c','cera20c']
+mrun = ['m0','m1','m2','m3','m4','m5','m6','m7','m8','m9']
 
 ###EXECUTE ####################################################################
 starttime = time.time()
@@ -128,23 +130,15 @@ for mm in list(range(len(model))):
     runspec,complexity,family,cmip,rgb,marker,latres_atm,lonres_atm,lev_atm,latres_oc,lonres_oc,lev_oc,ecs,tcr = get_historical_metadata(model[mm])
 
     #define the time period the GCM data is interpolated for as a function of the experiment and considered GCM
-    taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time)
+    taryears, timestep = get_target_period(model[mm],experiment,cmip_f=cmip,lead_time_f=lead_time,lead_time_concept_f=lead_time_concept)
     
     #Print the main script configuration to inform the user during execution from one GCM / reanalysis to another
-    print('INFO: Calculating Lamb Weather types for '+model[mm]+' for '+experiment+', time period '+str(taryears[0])+' to '+str(taryears[1])+', and lead-time (applied only for dcppA experiment) of '+str(lead_time)+' year(s)...')
+    print('INFO: Calculating Lamb Weather types for '+model[mm]+' for '+experiment+', time period '+str(taryears[0])+' to '+str(taryears[1])+', and lead-time (applied only for dcppA experiment) of '+str(lead_time)+' year(s) with lead-time concept '+lead_time_concept)
     
-    #create target directory if necessary
-    tarpath_step = tarpath + '/' + timestep + '/' + experiment + '/' + hemis
-    tarpath_step_mon = tarpath + '/mon/' + experiment + '/' + hemis #to save monthly LWT frequencies for internal use
-    
-    if os.path.isdir(tarpath_step) != True:
-        os.makedirs(tarpath_step)
-    if os.path.isdir(tarpath_step_mon) != True:
-        os.makedirs(tarpath_step_mon)
-
-    # set path to archive
+    # set path to input files
     if experiment == 'dcppA':
-        archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_' + hemis + '_' + str(lead_time)+'y.nc'
+        # archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_' + hemis + '_' + str(lead_time)+'y.nc'
+        archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_' + hemis + '_' + lead_time_concept+'_'+ str(lead_time)+'y.nc'
     elif experiment in ('historical', '20c', 'amip', 'ssp245', 'ssp585', 'rcp85', 'piControl'):
         archivo = srcpath + '/' + model[mm] + '/'+timestep+'/' + experiment + '/' + mrun[mm] + '/psl_interp' + '/psl_interp_'+timestep+'rPlev_' + model[mm] + '_' + experiment + '_' + mrun[mm] + '_'+hemis+'.nc'
     else:
@@ -257,12 +251,6 @@ for mm in list(range(len(model))):
     
     #save file for each model and output variable
     wtseries = wtseries.astype(np.int16) #convert to integer values
-    if experiment == 'dcppA':
-        newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
-        newfile_mon = tarpath_step_mon+'/wtcount_mon_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
-    else:
-        newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
-        newfile_mon = tarpath_step_mon+'/wtcount_mon_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
 
     outnc = xr.DataArray(wtseries, coords=[dates, center_lons, center_lats], dims=['time', 'lon', 'lat'], name='wtseries')
     outnc.attrs['long_name'] = 'Lamb Weather Types'
@@ -280,6 +268,7 @@ for mm in list(range(len(model))):
     #optionally add the lead-time of the forecast (for initialized GCM experiments only)
     if experiment == 'dcppA':
         outnc.attrs['lead_time'] = lead_time_from_nc
+        outnc.attrs['lead_time_concept'] = lead_time_concept
     for item in attrs_glob:
         outnc.attrs['udata_'+item[0]] = item[1]
     for item in attrs_psl:
@@ -304,6 +293,43 @@ for mm in list(range(len(model))):
         outnc.attrs['xesmf_regridding_method'] = regridding_method
     except:
         print("INFO: interpolation method cannot be saved because it is not available from "+archivo)
+    
+    #filter out 6-hourly values for reanalysis data after doing some checks
+    accum_hours = np.unique(outnc.time.dt.hour)
+
+    #force 6-hourly output data, irrespective of the entry in the get_target_period() function
+    if force_6h == 'yes':
+        if model[mm] not in ('era5','cera20c'):
+            raise ValueError('The force_6h input parameter is currently only used for model[m] set to era5 or cera20c !')
+        if len(accum_hours) != 8:
+            raise ValueError('The accum_hours variable is expected to have a lenght of 8, but has not !')
+        hour_ind = np.isin(outnc.time.dt.hour,[0,6,12,18])
+        outnc = outnc.isel(time=hour_ind)
+        accum_hours = np.unique(outnc.time.dt.hour) # overwrite accum_hours with new values
+        timestep = '6h' #overwrite timestep
+
+    accum_label = str(accum_hours).replace('[','').replace(']','') # accumulation label used below as attribute in monthly output dataset
+    
+    #check consistency between accumulation hours and timestep
+    if (timestep == '6h' and len(accum_hours) != 4) or (timestep == '3h' and len(accum_hours) != 8):
+        raise ValueError('timestep and accum_hours variables are not consistent !')
+
+    #set output directory name and create it on disk, if necessary
+    tarpath_step = tarpath + '/' + timestep + '/' + experiment + '/' + hemis
+    tarpath_step_mon = tarpath + '/mon/' + experiment + '/' + hemis #to save monthly LWT frequencies for internal use
+    
+    if os.path.isdir(tarpath_step) != True:
+        os.makedirs(tarpath_step)
+    if os.path.isdir(tarpath_step_mon) != True:
+        os.makedirs(tarpath_step_mon)
+    
+    #set path and name of the output files
+    if experiment == 'dcppA':
+        newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+lead_time_concept+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
+        newfile_mon = tarpath_step_mon+'/wtcount_mon_'+timestep+'_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+lead_time_concept+'_'+str(lead_time_from_nc[0:2])+'y_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
+    else:
+        newfile = tarpath_step+'/wtseries_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
+        newfile_mon = tarpath_step_mon+'/wtcount_mon_'+timestep+'_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+str(taryears[0])+'_'+str(taryears[1])+'.nc'
     
     #get monthly frequencies for all LWTs or combinations thereof defined in tarwts; for internal use only - no metadata is attached to the xarray dataset
     if calc_monthly_counts == 'yes':
@@ -350,6 +376,8 @@ for mm in list(range(len(model))):
         arr_tarwts = xr.DataArray(data=arr_tarwts_np,coords=[tarwts_name,monthly_dates,outnc.lon,outnc.lat],dims=['lwt','time','lon','lat'],name='wtcount').astype('int16')
         days_per_month = xr.DataArray(data=days_per_month,coords=[pd.DatetimeIndex(arr_tarwts.time)],dims=['time'],name='days_per_month').astype('int16')
         out_dataset_mon = xr.Dataset({'counts': arr_tarwts, 'days_per_month': days_per_month})
+        #set metadata of the monthly dataset
+        out_dataset_mon.attrs['accumulation_hours'] = accum_label
         
         #save monthly counts in netcdf format and close the respective Python objects
         if isinstance(compression_level,int):
@@ -385,7 +413,7 @@ for mm in list(range(len(model))):
         fullnames =  ['westerly flow','southerly flow','westerly shear vorticity','southerly shear vorticity','total shear vorticity','resultant flow'] #following Jones et al. 1993
         for ci in list(range(len(circinds))):
             if experiment == 'dcppA':
-                newfile = tarpath_step +'/'+circinds[ci]+'_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+'_'+str(lead_time_from_nc[0:2])+'y_'+taryears[0]+'_'+taryears[1]+'.nc'
+                newfile = tarpath_step +'/'+circinds[ci]+'_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+lead_time_concept+'_'+str(lead_time_from_nc[0:2])+'y_'+taryears[0]+'_'+taryears[1]+'.nc'
             else:
                 newfile = tarpath_step +'/'+circinds[ci]+'_'+model[mm]+'_'+experiment+'_'+mrun[mm]+'_'+hemis+'_'+taryears[0]+'_'+taryears[1]+'.nc'
             outnc = xr.DataArray(eval(circinds[ci]), coords=[dates, center_lons, center_lats], dims=['time', 'lon', 'lat'], name=circnames[ci])
@@ -402,6 +430,7 @@ for mm in list(range(len(model))):
             #optionally add the lead-time of the forecast (for initialized GCM experiments only)
             if experiment == 'dcppA':
                 outnc.attrs['lead_time'] = lead_time_from_nc
+                outnc.attrs['lead_time_concept'] = lead_time_concept
             for item in attrs_glob:
                 outnc.attrs['udata_'+item[0]] = item[1]
             for item in attrs_psl:
