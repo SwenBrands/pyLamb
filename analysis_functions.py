@@ -353,14 +353,14 @@ def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,colorma
     X, Y = mymap(XX, YY)
     plotme = np.ma.masked_where(np.isnan(mat_error),mat_error)
     if plottype == 'error':
-        mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, latlon=False, snap=snapval) #in newer Python versions, the x and y coordinates are interpreted as cell centers.
+        mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, latlon=False, snap=snapval, rasterized=True) #in newer Python versions, the x and y coordinates are interpreted as cell centers.
         plt.title(titletext, size=textsize+1)
         cbar = plt.colorbar(shrink=0.75)
         cbar.set_label(cbarlabel, size=textsize)
         cbar.ax.tick_params(labelsize=textsize)
         #savepath=figpath+'/'+figfolder+'/'+region+'/maps/'+errortype+'_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
     elif plottype == 'rank':
-        mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, norm = norm, latlon=False, snap=snapval)
+        mymap.pcolormesh(X,Y, plotme, cmap=colormap_f, norm = norm, latlon=False, snap=snapval, rasterized=True)
         plt.title(titletext, size=textsize+1)
         cbar = plt.colorbar()
         cbar.set_label(cbarlabel, size=textsize)
@@ -368,7 +368,7 @@ def draw_error_map(plottype,region,lats_values_f,lons_values_f,mat_error,colorma
         cbar.ax.tick_params(labelsize=textsize)
         #savepath=figpath+'/'+figfolder+'/'+region+'/maps/rank_'+model_f+'_'+mrun_f+'_wrt_'+refdata+'_'+region+'_ruout_'+correct_ru+'_altruns_'+alt_runs+'_1979-2005.'+figformat
 
-    mymap.drawcoastlines()
+    mymap.drawcoastlines(color='black')
     plt.savefig(savename, dpi=dpival)
     plt.close('all')
     
@@ -816,15 +816,9 @@ def get_random_sample(statsmodel_object,ntime_f):
 
 #def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,units_f): #former version
 #def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,origpoint=None):
-def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,agree_ind=None,origpoint=None):
+def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,map_proj_f,agree_ind=None,origpoint=None,cbar_norm_f=None):
     '''origpoint refers to a single point to be plotted on the map, e.g. the single point where LWT counts are associated with SST grid-boxes around the World'''
     fig = plt.figure()
-    
-    # if agree_ind is None:
-        # print('No overlying pattern was found by get_map_lowfreq_var() function !')
-    # else:
-        # toplayer_x = xx_f.flatten()[agree_ind.flatten()]
-        # toplayer_y = yy_f.flatten()[agree_ind.flatten()]
     
     # #this next code passage is likely not used by any script any more and can probably be removed in the future
     # maxind = np.argsort(pattern_f.flatten())[-1]
@@ -834,11 +828,29 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
     # min_x = xx_f.flatten()[minind]
     # min_y = yy_f.flatten()[minind]
 
+    if cbar_norm_f == None:
+        print('No norm is applied to the colorbar.')
+        norm_f = None
+    elif cbar_norm_f > 0:
+        boundaries_f = np.linspace(-0.5, cbar_norm_f+0.5, cbar_norm_f+2)
+        cmap_discrete_f = plt.get_cmap('hot_r')
+        #cmap_discrete_f = plt.get_cmap('rainbow')
+        #cmap_discrete_f = plt.get_cmap('jet')
+        norm_discrete_f = mcolors.BoundaryNorm(boundaries_f, cmap_discrete_f.N)
+    else:
+        raise ValueError("Unknown entry for <cbar_norm_f> !")
+
     ax = fig.add_subplot(111, projection=map_proj_f)
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy_f.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
     ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
     
-    image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
+    if cbar_norm_f == None:
+        image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, rasterized=True)
+    elif cbar_norm_f > 0:
+        image = ax.pcolormesh(xx_f, yy_f, pattern_f, cmap=cmap_discrete_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, norm=norm_discrete_f, rasterized=True)
+    else:
+        raise ValueError("Unknown entry for <cbar_norm_f> !")        
+        
     #image = ax.contourf(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
     
     #get size of the points indicating significance
@@ -862,12 +874,36 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,minval_f,maxval_f,dpival_f,title_f,s
         ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
         #ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=map_proj_f, zorder=5) 
     
-    ##plot parallels and meridians
-    #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
-    #gl.xformatter = LONGITUDE_FORMATTER
-    #gl.yformatter = LATITUDE_FORMATTER
+    # # plot parallels and meridians
+    # gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
+    # gl.xformatter = LONGITUDE_FORMATTER
+    # gl.yformatter = LATITUDE_FORMATTER
     
-    cbar = plt.colorbar(image,orientation='vertical', shrink = 0.6)
+    # plot parallels at 30 and 70 degrees latitude
+    # pdb.set_trace()
+    if yy_f[0,0] > 0:
+        parallels = [30-halfres_f, 70+halfres_f]
+    elif yy_f[0,0] < 0:
+        parallels = [-30+halfres_f, -70-halfres_f]
+    else:
+        raise ValueError('Unexpected value for <yy_f[0][0]> !')
+    
+    # for lat_f in parallels:
+    #     pdb.set_trace()
+    #     #ax.plot([-180, 180], [lat, lat], color='gray', linestyle='--', transform=ccrs.PlateCarree(), zorder=6)
+    #     #ax.gridlines(xlocs=[], ylocs=[lat_f], color='gray', linestyle='solid', linewidth=1)
+    
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='gray', alpha=0.5, linestyle='solid', xlocs=[], ylocs=parallels, zorder=6)
+    # gl.xformatter = LONGITUDE_FORMATTER
+    # gl.yformatter = LATITUDE_FORMATTER
+
+    if cbar_norm_f == None:
+        cbar = plt.colorbar(image,orientation='vertical', shrink = 0.6)
+    elif cbar_norm_f > 0:
+        cbar = plt.colorbar(image,orientation='vertical', shrink = 0.6, boundaries=boundaries_f, ticks=np.arange(cbar_norm_f+1))
+    else:
+        raise ValueError("Unknown entry for <cbar_norm_f> !")
+
     cbar.set_label(cbarlabel_f, rotation=270, labelpad=+12, y=0.5, fontsize=titlesize_f)
     plt.title(title_f, fontsize=titlesize_f-1)
     plt.savefig(savename_f,dpi=dpival_f)
@@ -902,7 +938,7 @@ def get_seasonal_mean(xr_ds_f,months_f):
     xr_ds_f.close()
     del(xr_ds_f,months_f)
 
-def map_polar_single_field(xr_arr,title,savename_nh,savename_sh,minval,maxval,dpival,colormap,titlesize,cbarlabel):
+def map_polar_single_field(xr_arr,title,savename_nh,savename_sh,minval,maxval,dpival,colormap,titlesize,cbarlabel,cbar_norm_f=None):
     '''maps a single field without superimposed layer for the northern and southern hemsiphere separately using a polar stereographic projection'''
     xr_arr_nh = xr_arr.isel(lat=xr_arr.lat >= 0)
     xr_arr_sh = xr_arr.isel(lat=xr_arr.lat < 0)
@@ -911,8 +947,8 @@ def map_polar_single_field(xr_arr,title,savename_nh,savename_sh,minval,maxval,dp
     if os.path.isdir(savedir) != True:
         os.makedirs(savedir)
     halfres = (xr_arr.lat.values[1]-xr_arr.lat.values[0])/2
-    get_map_lowfreq_var(np.transpose(xr_arr_nh.values),xx_nh,yy_nh,minval,maxval,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,ccrs.NorthPolarStereo(),agree_ind=None,origpoint=None)
-    get_map_lowfreq_var(np.transpose(xr_arr_sh.values),xx_sh,yy_sh,minval,maxval,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,ccrs.SouthPolarStereo(),agree_ind=None,origpoint=None)
+    get_map_lowfreq_var(np.transpose(xr_arr_nh.values),xx_nh,yy_nh,minval,maxval,dpival,title,savename_nh,halfres,colormap,titlesize,cbarlabel,ccrs.NorthPolarStereo(),agree_ind=None,origpoint=None,cbar_norm_f=cbar_norm_f)
+    get_map_lowfreq_var(np.transpose(xr_arr_sh.values),xx_sh,yy_sh,minval,maxval,dpival,title,savename_sh,halfres,colormap,titlesize,cbarlabel,ccrs.SouthPolarStereo(),agree_ind=None,origpoint=None,cbar_norm_f=cbar_norm_f)
     xr_arr.close()
     xr_arr_nh.close()
     xr_arr_sh.close()

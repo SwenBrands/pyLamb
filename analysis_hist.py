@@ -45,7 +45,7 @@ experiment = 'historical'
 refdata = 'era5' #interim, jra55 or era5 reference reanlaysis dataset
 errortype = 'MAE' #error type to be computed, MAE, KL, TPMS, PERS or PERSall: Mean Absolute Error, Kullback-Leibler divergence, Transition Probability Matrix score (full matrix) or only diagonal thereof (PERS) or error in sum of the diagonal (PERSall) indicating probabilities of persistence.
 timelag = 1 #lag for calculating transition probabilities, six-hourly time step i.e. 1 refers to a lag of six hours, 2 to 12 hours etc. (this is the time index), 4 for work with UZAR
-region = 'eurocordex' #nh, sh, eurocordex, cordexna, escena, north_atlantic
+region = 'sh' #nh, sh, eurocordex, cordexna, escena, north_atlantic
 tarpath = '/media/swen/ext_disk2/datos/lamb_cmip5/results_v2/6h' #path of the source files
 figpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/figs'
 auxpath = home+'/datos/tareas_meteogalicia/lamb_cmip5/pyLamb/aux'
@@ -60,7 +60,7 @@ taryears = ['1979', '2005'] #start and end years as indicated in source nc file 
 taryears_cmip6 = ['1979', '2014']
 taryears_cmip6_long = ['1850', '2014'] #alternative start and end years, used for those catalogues available from 1850 to 2014
 #set LWT classification options
-classes_needed = 27 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH, 18 following Fernández-Granja et al. 2023, Climate Dynamics, https://doi.org/10.1007%2Fs00382-022-06658-7
+classes_needed = 10 #minimum number of classes required to plot the result on a map, 27 for NH and 20 for SH, 18 following Fernández-Granja et al. 2023, Climate Dynamics, https://doi.org/10.1007%2Fs00382-022-06658-7
 minfreq = 0.001 #minimum frequency required to plot the results on a map (in decimals), 0.001 in gmd-2020-418
 #set format and resolution of the output figures
 figformat = 'pdf' #format of output figures, pdf or png
@@ -71,8 +71,8 @@ cbounds_kl = np.linspace(0,0.2,21) #colormap intervals for the Kullback-Leibler 
 cbounds_tpms = np.linspace(0,0.2,21) #colormap intervals for the TPMS in %
 cbounds_pers = np.linspace(0,1.4,29) #colormap intervals for the difference in persistence probabilities %
 cbounds_persall = np.linspace(0,25,26)
-colormap_error = plt.cm.jet #plt.cm.RdYlBu_r, plt.cm.hot_r, plt.cm.gnuplot2, plt.cm.CMRmap, plt.cm.cubehelix_r, plt.cm.magma_r, plt.cm.jet, plt.cm.afmhot_r colormap used in the maps, must be in this format, is used for plotting the MAE and pattern correlation matrix
-colormap_ranking = plt.cm.jet
+colormap_error = plt.cm.rainbow #plt.cm.RdYlBu_r, plt.cm.hot_r, plt.cm.gnuplot2, plt.cm.CMRmap, plt.cm.cubehelix_r, plt.cm.magma_r, plt.cm.jet, plt.cm.afmhot_r colormap used in the maps, must be in this format, is used for plotting the MAE and pattern correlation matrix
+colormap_ranking = plt.cm.rainbow
 #properties for pcolormesh
 snapval = False #parameter for pcolormesh (see below)
 #set boxplot options
@@ -134,8 +134,8 @@ else:
 #select models to be analysed as a function of the <groupby> parameter, select a given model only once, the specific run for each model (e.g. r1i1p1f1) is assigned by <get_historical_metadata.py> and can be modified there
 if groupby == 'agcm':
     print('INFO: The GCMs are grouped according to their AGCM!')
-    model = ['csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2','fgoals_g3','mpi_esm_lr','mpi_esm_mr','mpi_esm_1_2_lr','mpi_esm_1_2_hr','mpi_esm_1_2_ham','awi_esm_1_1_lr','nesm3','cmcc_cm','cmcc_cm2_sr5','cmcc_cm2_hr4','cmcc_esm2','ccsm4','cesm2','noresm1_m','noresm2_lm','noresm2_mm','sam0_unicon','taiesm1','bcc_csm1_1','bcc_csm2_mr','cnrm_cm5','cnrm_cm6_1','cnrm_cm6_1_hr','cnrm_esm2_1','ec_earth','ec_earth3','ec_earth3_veg','ec_earth3_veg_lr','ec_earth3_aerchem','ec_earth3_cc','gfdl_cm3','gfdl_cm4','gfdl_esm2g','gfdl_esm4','kiost_esm','giss_e2_h','giss_e2_r','giss_e2_1_g','ipsl_cm5a_lr','ipsl_cm5a_mr','ipsl_cm6a_lr','miroc5','miroc6','miroc_es2l','miroc_esm','mri_esm1','mri_esm2_0','inm_cm4','inm_cm5','canesm2','iitm_esm'] #'iitm_esm'
-    mylabels = ['CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2','FGOALS-g3','MPI-ESM-LR','MPI-ESM-MR','MPI-ESM1.2-LR','MPI-ESM1.2-HR','MPI-ESM-1-2-HAM','AWI-ESM-1-1-LR','NESM3','CMCC-CM','CMCC-CM2-SR5','CMCC-CM2-HR4','CMCC-ESM2','CCSM4','CESM2','NorESM1-M','NorESM2-LM','NorESM2-MM','SAM0-UNICON','TaiESM1','BCC-CSM1.1','BCC-CSM2-MR','CNRM-CM5','CNRM-CM6-1','CNRM-CM6-1-HR','CNRM-ESM2-1','EC-Earth2.3','EC-Earth3','EC-Earth3-Veg','EC-Earth3-Veg-LR','EC-Earth3-AerChem','EC-Earth3-CC','GFDL-CM3','GFDL-CM4','GFDL-ESM2G','GFDL-ESM4','KIOST-ESM','GISS-E2-H','GISS-E2-R','GISS-E2.1-G','IPSL-CM5A-LR','IPSL-CM5A-MR','IPSL-CM6A-LR','MIROC5','MIROC6','MIROC-ES2L','MIROC-ESM','MRI-ESM1','MRI-ESM2.0','INM-CM4','INM-CM5','CanESM2','IITM-ESM'] #'IITM-ESM'
+    model = ['jra55','csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2','fgoals_g3','mpi_esm_lr','mpi_esm_mr','mpi_esm_1_2_lr','mpi_esm_1_2_hr','mpi_esm_1_2_ham','awi_esm_1_1_lr','nesm3','cmcc_cm','cmcc_cm2_sr5','cmcc_cm2_hr4','cmcc_esm2','ccsm4','cesm2','noresm1_m','noresm2_lm','noresm2_mm','sam0_unicon','taiesm1','bcc_csm1_1','bcc_csm2_mr','cnrm_cm5','cnrm_cm6_1','cnrm_cm6_1_hr','cnrm_esm2_1','ec_earth','ec_earth3','ec_earth3_veg','ec_earth3_veg_lr','ec_earth3_aerchem','ec_earth3_cc','gfdl_cm3','gfdl_cm4','gfdl_esm2g','gfdl_esm4','kiost_esm','giss_e2_h','giss_e2_r','giss_e2_1_g','ipsl_cm5a_lr','ipsl_cm5a_mr','ipsl_cm6a_lr','miroc5','miroc6','miroc_es2l','miroc_esm','mri_esm1','mri_esm2_0','inm_cm4','inm_cm5','canesm2','iitm_esm'] #'iitm_esm'
+    mylabels = ['JRA-55','CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2','FGOALS-g3','MPI-ESM-LR','MPI-ESM-MR','MPI-ESM1.2-LR','MPI-ESM1.2-HR','MPI-ESM-1-2-HAM','AWI-ESM-1-1-LR','NESM3','CMCC-CM','CMCC-CM2-SR5','CMCC-CM2-HR4','CMCC-ESM2','CCSM4','CESM2','NorESM1-M','NorESM2-LM','NorESM2-MM','SAM0-UNICON','TaiESM1','BCC-CSM1.1','BCC-CSM2-MR','CNRM-CM5','CNRM-CM6-1','CNRM-CM6-1-HR','CNRM-ESM2-1','EC-Earth2.3','EC-Earth3','EC-Earth3-Veg','EC-Earth3-Veg-LR','EC-Earth3-AerChem','EC-Earth3-CC','GFDL-CM3','GFDL-CM4','GFDL-ESM2G','GFDL-ESM4','KIOST-ESM','GISS-E2-H','GISS-E2-R','GISS-E2.1-G','IPSL-CM5A-LR','IPSL-CM5A-MR','IPSL-CM6A-LR','MIROC5','MIROC6','MIROC-ES2L','MIROC-ESM','MRI-ESM1','MRI-ESM2.0','INM-CM4','INM-CM5','CanESM2','IITM-ESM'] #'IITM-ESM'
     # model = ['csiro_mk3_6_0','access10','access13','access_cm2','access_esm1_5','hadgem2_es','hadgem2_cc','hadgem3_gc31_mm','kace_1_0_g','fgoals_g2',]
     # mylabels = ['CSIRO-MK3.6','ACCESS1.0','ACCESS1.3','ACCESS-CM2','ACCESS-ESM1.5','HadGEM2-ES','HadGEM2-CC','HadGEM3-GC31-MM','KACE1.0-G','FGOALS-g2']
 elif groupby == 'ogcm':
