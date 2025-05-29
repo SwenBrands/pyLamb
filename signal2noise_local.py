@@ -52,10 +52,10 @@ tarhours = [0, 6, 12, 18] #hours of the day to be selected, may be different fro
 # tarhours = [0, 3, 6, 9, 12, 15, 18, 21]
 
 #city = ['Bergen','Paris','Prague','Barcelona'] #['Athens','Azores','Barcelona','Bergen','Cairo','Casablanca','Paris','Prague','SantiagoDC','Seattle','Tokio'] #city or point of interest
-city = ['Wellington','SantiagoDC']
+city = ['Bergen','Barcelona']
 
 reference_period = [1970,2014] # "from_data" or list containing the start and end years
-# seasons = ['OND','JFM','ONDJFM','AMJJAS'] #list of seasons to be considered: year, DJF, MAM, JJA, SON, JFM, OND, ONDJFM or AMJJAS
+# seasons = ['OND','JFM','ONDJFM','AMJJAS','DJFMAM','JJASON'] #list of seasons to be considered: year, DJF, MAM, JJA, SON, JFM, OND, ONDJFM or AMJJAS
 seasons = ['DJFMAM']
 tarwts = [7,15,24] #[7,15,24] westerlies, [5,13,22] southerlies, [9,17,26] northerly, 15 = pure directional west
 center_wrt = 'memberwise_mean' # ensemble_mean or memberwise_mean; centering w.r.t. to ensemble (or overall) mean value or member-wise temporal mean value prior to calculating signal-to-noise
@@ -183,8 +183,11 @@ for sea in np.arange(len(seasons)):
                     file_endyear = file_taryears[1]
                     
                     store_wt = store_wt_orig+'/'+timestep+'/'+experiment[en]+'/'+hemis
-                    if experiment[en] == 'dcppA':
+                    if experiment[en] == 'dcppA' and lead_time_concept[lt] == 'LT':
                         wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time_concept[lt])+'_'+str(lead_time[lt])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
+                    elif experiment[en] == 'dcppA' and lead_time_concept[lt] == 'FY':
+                        #rename the FY experiments in the future to be coherent with the naming for LT !
+                        wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(lead_time[lt])+'y_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
                     elif experiment[en] in ('historical', 'amip', '20c'):
                         wt_file = store_wt+'/wtseries_'+model[mm]+'_'+experiment[en]+'_'+mrun[mm]+'_'+hemis+'_'+str(file_startyear)+'_'+str(file_endyear)+'.nc' #path to the LWT catalogues
                     else:
@@ -208,6 +211,9 @@ for sea in np.arange(len(seasons)):
                         print('Processing '+seasons[sea]+' season...')                    
                     elif seasons[sea] in ('AMJJAS'):
                         wt = wt.isel(time = np.isin(wt['time'].dt.month,[4,5,6,7,8,9]))
+                        print('Processing '+seasons[sea]+' season...')
+                    elif seasons[sea] in ('JJASON'):
+                        wt = wt.isel(time = np.isin(wt['time'].dt.month,[6,7,8,9,10,11]))
                         print('Processing '+seasons[sea]+' season...')
                     elif seasons[sea] in ('JFM'):
                         wt = wt.isel(time = np.isin(wt['time'].dt.month,[1,2,3]))
@@ -265,7 +271,7 @@ for sea in np.arange(len(seasons)):
                         #     end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
                         #     wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 3) & (arr_tarwts.time.dt.day == 31) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
                         #     wt_agg_step = wt_agg_step.groupby('time.year').sum('time',skipna=False) #does not sum anything but changes the time coordinate to "year"
-                        elif seasons[sea] in ('AMJJAS','ONDJFM','JFM','OND'):
+                        elif seasons[sea] in ('AMJJAS','JJASON','ONDJFM','JFM','OND'):
                             hours_per_year = (arr_tarwts.time.dt.year == arr_tarwts.time.dt.year[0]).sum() # a single value specifying the number or time instances of the first year on record   
                             arr_tarwts = arr_tarwts.rolling(time=int(hours_per_year)).sum() #rolling sum                        
                             end_hour = np.sort(np.unique(arr_tarwts.time.dt.hour.values))[-1] #get the last hour of the accumulation period
@@ -273,6 +279,8 @@ for sea in np.arange(len(seasons)):
                                 wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 9) & (arr_tarwts.time.dt.day == 30) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
                             elif seasons[sea] == 'ONDJFM':
                                 wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 3) & (arr_tarwts.time.dt.day == 31) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
+                            elif seasons[sea] == 'JJASON':
+                                wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 11) & (arr_tarwts.time.dt.day == 30) & (arr_tarwts.time.dt.hour == end_hour))[0]) #get the accumulated values ending in March
                             elif seasons[sea] == 'JFM':
                                 wt_agg_step = arr_tarwts.isel(time=np.where((arr_tarwts.time.dt.month == 3) & (arr_tarwts.time.dt.day == 31) & (arr_tarwts.time.dt.hour == end_hour))[0]) 
                             elif seasons[sea] == 'OND':
